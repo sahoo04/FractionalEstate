@@ -97,6 +97,10 @@ pids
 .vercel
 **/.vercel
 
+# Netlify
+.netlify
+**/.netlify
+
 # Temporary files
 *.tmp
 *.temp
