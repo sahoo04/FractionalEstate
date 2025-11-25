@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const runtime = 'nodejs';
 
-const PINATA_JWT = process.env.PINATA_JWT;
+const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT || process.env.PINATA_JWT;
 const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || 'gateway.pinata.cloud';
 
 if (!PINATA_JWT) {
