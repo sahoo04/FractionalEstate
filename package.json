@@ -10,7 +10,9 @@
     "build:relayer": "cd relayer-service && npm run build",
     "create-relayer-wallet": "node scripts/create-relayer-wallet.js",
     "update:cancelled-listings": "npx ts-node scripts/update-cancelled-listings-db.ts",
-    "install:all": "cd contracts && npm install && cd ../frontend && npm install && cd ../relayer-service && npm install && cd ../subgraph && npm install"
+    "install:all": "cd contracts && npm install && cd ../frontend && npm install && cd ../relayer-service && npm install && cd ../subgraph && npm install",
+    "build": "cd frontend && npm ci && npm run build",
+    "dev": "cd frontend && npm run dev"
   },
   "keywords": [
     "web3",
