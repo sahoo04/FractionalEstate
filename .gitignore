@@ -1,0 +1,139 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Environment files
+.env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
+**/.env*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+**/dist/
+**/build/
+*.tsbuildinfo
+
+# Next.js
+.next/
+out/
+.vercel
+.swc/
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log.*
+
+# Hardhat
+cache/
+artifacts/
+typechain/
+typechain-types/
+deployments.json
+.openzeppelin/
+coverage.json
+coverage/
+
+# The Graph
+subgraph/generated/
+subgraph/build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.temp/
+tmp/
+temp/
+
+# Package manager locks (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Misc
+*.pem
+*.key
+*.cert
+.secrets/
+secrets/
+
+# Relayer service
+relayer-service/dist/
+relayer-service/logs/
+relayer-service/.env*
+
+# Frontend specific
+frontend/.next/
+frontend/out/
+frontend/.swc/
+frontend/.vercel
+
+# Contracts specific
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+contracts/deployments.json
+contracts/.openzeppelin/
+
+# Scripts output
+scripts/output/
+scripts/logs/
+
+
+# Local Netlify folder
+.netlify
+
+.vercel

@@ -1,0 +1,25 @@
+{
+  "name": "fractionalstay",
+  "version": "1.0.0",
+  "description": "FractionalStay - Fractional Real Estate Ownership Platform",
+  "scripts": {
+    "setup": "node scripts/setup-env.js",
+    "update-addresses": "node scripts/update-addresses.js",
+    "deploy": "cd contracts && npm run deploy:sepolia && cd .. && npm run update-addresses",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:relayer": "cd relayer-service && npm run build",
+    "create-relayer-wallet": "node scripts/create-relayer-wallet.js",
+    "install:all": "cd contracts && npm install && cd ../frontend && npm install && cd ../relayer-service && npm install && cd ../subgraph && npm install"
+  },
+  "keywords": [
+    "web3",
+    "real-estate",
+    "fractional",
+    "arbitrum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}

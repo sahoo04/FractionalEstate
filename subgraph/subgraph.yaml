@@ -1,0 +1,83 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PropertyShare1155
+    network: arbitrum-sepolia
+    source:
+      address: "{{PropertyShare1155}}"
+      abi: PropertyShare1155
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Property
+        - Holder
+        - Transfer
+      abis:
+        - name: PropertyShare1155
+          file: ./abis/PropertyShare1155.json
+      eventHandlers:
+        - event: PropertyCreated(indexed uint256,string,string,uint256,uint256)
+          handler: handlePropertyCreated
+        - event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleTransferSingle
+        - event: TransferBatch(indexed address,indexed address,indexed address[],uint256[],uint256[])
+          handler: handleTransferBatch
+        - event: SharesMinted(indexed uint256,indexed address,uint256)
+          handler: handleSharesMinted
+      file: ./src/mapping.ts
+
+  - kind: ethereum
+    name: RevenueSplitter
+    network: arbitrum-sepolia
+    source:
+      address: "{{RevenueSplitter}}"
+      abi: RevenueSplitter
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Deposit
+        - Claim
+      abis:
+        - name: RevenueSplitter
+          file: ./abis/RevenueSplitter.json
+      eventHandlers:
+        - event: RentDeposited(indexed uint256,uint256,uint256,uint256)
+          handler: handleRentDeposited
+        - event: RewardClaimed(indexed uint256,indexed address,uint256)
+          handler: handleRewardClaimed
+      file: ./src/mapping.ts
+
+  - kind: ethereum
+    name: Marketplace
+    network: arbitrum-sepolia
+    source:
+      address: "{{Marketplace}}"
+      abi: Marketplace
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Listing
+      abis:
+        - name: Marketplace
+          file: ./abis/Marketplace.json
+      eventHandlers:
+        - event: ListingCreated(indexed uint256,indexed address,indexed uint256,uint256,uint256)
+          handler: handleListingCreated
+        - event: ListingCancelled(indexed uint256)
+          handler: handleListingCancelled
+        - event: PurchaseExecuted(indexed uint256,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handlePurchaseExecuted
+      file: ./src/mapping.ts
+
+

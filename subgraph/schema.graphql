@@ -1,0 +1,67 @@
+type Property @entity {
+  id: ID! # tokenId
+  name: String!
+  location: String!
+  totalShares: BigInt!
+  pricePerShare: BigInt!
+  totalDeposited: BigInt! # Total rent deposited
+  holders: [Holder!]! @derivedFrom(field: "property")
+  transfers: [Transfer!]! @derivedFrom(field: "property")
+  deposits: [Deposit!]! @derivedFrom(field: "property")
+  claims: [Claim!]! @derivedFrom(field: "property")
+  listings: [Listing!]! @derivedFrom(field: "property")
+}
+
+type Holder @entity {
+  id: ID! # propertyId-holderAddress
+  property: Property!
+  address: Bytes!
+  balance: BigInt!
+  totalClaimed: BigInt!
+  claims: [Claim!]! @derivedFrom(field: "holder")
+}
+
+type Transfer @entity {
+  id: ID!
+  property: Property!
+  from: Bytes!
+  to: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Deposit @entity {
+  id: ID!
+  property: Property!
+  amount: BigInt!
+  feeAmount: BigInt!
+  netAmount: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Claim @entity {
+  id: ID!
+  property: Property!
+  holder: Holder!
+  amount: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Listing @entity {
+  id: ID! # listingId
+  property: Property!
+  seller: Bytes!
+  amount: BigInt!
+  pricePerShare: BigInt!
+  active: Boolean!
+  createdAt: BigInt!
+  cancelledAt: BigInt
+  purchasedAt: BigInt
+  buyer: Bytes
+  transactionHash: Bytes!
+}
+
+
