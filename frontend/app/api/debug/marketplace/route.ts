@@ -12,17 +12,57 @@ export async function GET() {
     }
 
     // Fetch ALL marketplace listings (not just ACTIVE)
-    const { data: allListings, error: allError } = await (supabaseAdmin as any)
-      .from('marketplace_listings')
-      .select('*')
-      .order('created_at', { ascending: false })
+    // Try both column names in case database schema differs
+    let allListings: any[] = []
+    let allError: any = null
+    
+    try {
+      const result = await (supabaseAdmin as any)
+        .from('marketplace_listings')
+        .select('*')
+        .order('created_at', { ascending: false })
+      allListings = result.data || []
+      allError = result.error
+    } catch (e) {
+      // Try with listed_at if created_at doesn't exist
+      try {
+        const result = await (supabaseAdmin as any)
+          .from('marketplace_listings')
+          .select('*')
+          .order('listed_at', { ascending: false })
+        allListings = result.data || []
+        allError = result.error
+      } catch (e2) {
+        allError = e2
+      }
+    }
 
     // Fetch only ACTIVE listings
-    const { data: activeListings, error: activeError } = await (supabaseAdmin as any)
-      .from('marketplace_listings')
-      .select('*')
-      .eq('status', 'ACTIVE')
-      .order('created_at', { ascending: false })
+    let activeListings: any[] = []
+    let activeError: any = null
+    
+    try {
+      const result = await (supabaseAdmin as any)
+        .from('marketplace_listings')
+        .select('*')
+        .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false })
+      activeListings = result.data || []
+      activeError = result.error
+    } catch (e) {
+      // Try with listed_at if created_at doesn't exist
+      try {
+        const result = await (supabaseAdmin as any)
+          .from('marketplace_listings')
+          .select('*')
+          .eq('status', 'ACTIVE')
+          .order('listed_at', { ascending: false })
+        activeListings = result.data || []
+        activeError = result.error
+      } catch (e2) {
+        activeError = e2
+      }
+    }
 
     return NextResponse.json({ 
       success: true,

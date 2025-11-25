@@ -268,6 +268,41 @@ export interface Database {
           last_updated?: string
         }
       }
+      ward_boy_mappings: {
+        Row: {
+          id: string
+          property_id: number
+          ward_boy_address: string
+          assigned_at: string
+          assigned_by: string | null
+          is_active: boolean
+          removed_at: string | null
+          removed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          property_id: number
+          ward_boy_address: string
+          assigned_at: string
+          assigned_by?: string | null
+          is_active?: boolean
+          removed_at?: string | null
+          removed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          property_id?: number
+          ward_boy_address?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          is_active?: boolean
+          removed_at?: string | null
+          removed_by?: string | null
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

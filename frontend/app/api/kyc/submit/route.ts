@@ -45,12 +45,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if KYC already exists
+    // Check if KYC already exists - check both columns
+    const normalizedAddress = wallet_address.toLowerCase()
     const { data: existingKYC } = await (supabase as any)
       .from('kyc_documents')
-      .select('id, status')
-      .eq('user_wallet', wallet_address.toLowerCase())
-      .single()
+      .select('id, status, wallet_address, user_wallet')
+      .or(`user_wallet.eq.${normalizedAddress},wallet_address.eq.${normalizedAddress}`)
+      .maybeSingle()
 
     if (existingKYC) {
       // Update existing KYC
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
           submitted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('user_wallet', wallet_address.toLowerCase())
+        .or(`user_wallet.eq.${normalizedAddress},wallet_address.eq.${normalizedAddress}`)
         .select()
         .single()
 

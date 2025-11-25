@@ -26,32 +26,48 @@ build/
 out/
 **/dist/
 **/build/
-*.tsbuildinfo
+**/.next/
+**/out/
 
-# Next.js
-.next/
-out/
-.vercel
-.swc/
+# TypeScript
+*.tsbuildinfo
+**/*.tsbuildinfo
+next-env.d.ts
+**/next-env.d.ts
 
 # Testing
 coverage/
 .nyc_output/
-*.test.js.snap
+*.lcov
+**/coverage/
+**/.nyc_output/
 
-# IDE
+# Hardhat / Solidity
+cache/
+artifacts/
+typechain/
+typechain-types/
+deployments.json
+**/cache/
+**/artifacts/
+**/typechain/
+**/typechain-types/
+**/deployments.json
+
+# IDE / Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-*.sublime-project
-*.sublime-workspace
 .project
 .classpath
 .settings/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
 
-# OS
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -60,80 +76,114 @@ coverage/
 ehthumbs.db
 Thumbs.db
 Desktop.ini
+$RECYCLE.BIN/
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
-logs/
-*.log.*
+pnpm-debug.log*
+.pnpm-debug.log*
 
-# Hardhat
-cache/
-artifacts/
-typechain/
-typechain-types/
-deployments.json
-.openzeppelin/
-coverage.json
-coverage/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Vercel
+.vercel
+**/.vercel
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+.tmp/
+.temp/
+
+# Package manager locks (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
 
 # The Graph
 subgraph/generated/
 subgraph/build/
+**/subgraph/generated/
+**/subgraph/build/
+
+# Misc
+.parcel-cache/
+.cache/
+.turbo/
+*.pem
+*.key
+*.crt
+
+# Test files
+**/*test*.ts
+**/*test*.js
+**/*test*.tsx
+**/*test*.jsx
+**/*spec*.ts
+**/*spec*.js
+**/*spec*.tsx
+**/*spec*.jsx
+**/test/
+**/tests/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+test-*.sql
+test-*.html
+test-*.js
+test-*.ts
+test-results/
+playwright-report/
+.playwright/
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Temporary files
-*.tmp
-*.temp
-.cache/
-.temp/
-tmp/
-temp/
+# IPFS / Pinata (if storing hashes locally)
+# Uncomment if you don't want to track IPFS hash files
+# **/kyc-sbt-ipfs-hashes.json
 
-# Package manager locks (optional - uncomment if you want to ignore)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# OneDrive / Cloud sync artifacts
+~$*
+*.odt
+*.ods
 
-# Misc
-*.pem
-*.key
-*.cert
-.secrets/
-secrets/
+# Compiled JavaScript (if any)
+*.js.map
+*.d.ts.map
 
-# Relayer service
-relayer-service/dist/
-relayer-service/logs/
-relayer-service/.env*
+# Storybook
+storybook-static/
 
-# Frontend specific
-frontend/.next/
-frontend/out/
-frontend/.swc/
-frontend/.vercel
+# Debug
+.vscode-test/
 
-# Contracts specific
-contracts/cache/
-contracts/artifacts/
-contracts/typechain-types/
-contracts/deployments.json
-contracts/.openzeppelin/
+# Documentation files (keep only README.md and service READMEs)
+*.md
+!README.md
+**/*.md
+!**/README.md
+# Keep service-specific READMEs
+!indexer/README.md
+!relayer-service/README.md
 
-# Scripts output
-scripts/output/
-scripts/logs/
-
-
-# Local Netlify folder
-.netlify
-
-.vercel
+# Utility and debugging scripts
+**/scripts/check-*.js
+**/scripts/check-*.ts
+**/scripts/cancel-*.ts
+**/scripts/estimate-*.ts
+**/scripts/setup.ts
+# Keep mint-usdc.ts (needed for MintUSDCButton)

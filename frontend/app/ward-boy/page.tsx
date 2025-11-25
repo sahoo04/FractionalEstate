@@ -1,205 +1,293 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { useAccount } from 'wagmi'
-import WardBoyDepositForm from '@/components/WardBoyDepositForm'
-import { TransactionDebugger } from '@/components/TransactionDebugger'
-import { supabase } from '@/lib/supabase'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { MainLayout } from '@/components/layouts/MainLayout'
+import React, { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
+import { supabase } from "@/lib/supabase";
+import {
+  AlertCircle,
+  Loader2,
+  LayoutDashboard,
+  FileText,
+  History,
+  Home,
+} from "lucide-react";
+import { MainLayout } from "@/components/layouts/MainLayout";
+import WardBoyDepositForm from "@/components/WardBoyDepositForm";
+import { WardBoyDashboard } from "@/components/ward-boy/WardBoyDashboard";
+import { DepositHistory } from "@/components/ward-boy/DepositHistory";
+import { PropertyCards } from "@/components/ward-boy/PropertyCards";
+
+type TabType = "overview" | "deposits" | "history" | "properties";
+
+interface PropertyDetails {
+  id: string;
+  token_id: number;
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+  location: string;
+}
 
 export default function WardBoyPage() {
-  const { address, isConnected } = useAccount()
-  const [assignedProperties, setAssignedProperties] = useState<number[]>([])
-  const [isChecking, setIsChecking] = useState(true)
+  const { address, isConnected } = useAccount();
+  const [assignedProperties, setAssignedProperties] = useState<number[]>([]);
+  const [propertyDetailsMap, setPropertyDetailsMap] = useState<
+    Record<number, PropertyDetails>
+  >({});
+  const [isChecking, setIsChecking] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   useEffect(() => {
     if (!address || !isConnected) {
-      setIsChecking(false)
-      return
+      setIsChecking(false);
+      return;
     }
 
     // Fast lookup from Supabase database
     const checkAssignedProperties = async () => {
-      setIsChecking(true)
-      
+      setIsChecking(true);
+
       try {
         if (!supabase) {
-          setAssignedProperties([])
-          setIsChecking(false)
-          return
+          setAssignedProperties([]);
+          setIsChecking(false);
+          return;
         }
 
         // Query ward_boy_mappings table for this address
-        const { data, error } = await (supabase as any)
-          .from('ward_boy_mappings')
-          .select('property_id')
-          .eq('ward_boy_address', address.toLowerCase())
-          .eq('is_active', true)
+        const { data, error } = await supabase
+          .from("ward_boy_mappings")
+          .select("property_id")
+          .eq("ward_boy_address", address.toLowerCase())
+          .eq("is_active", true);
 
         if (error) {
-          console.error('Error fetching ward boy properties:', error)
-          setAssignedProperties([])
+          console.error("Error fetching ward boy properties:", error);
+          setAssignedProperties([]);
         } else {
-          const propertyIds = data?.map((row: any) => row.property_id) || []
-          setAssignedProperties(propertyIds)
+          const propertyIds =
+            (data as { property_id: number }[] | null)?.map(
+              (row) => row.property_id
+            ) || [];
+          setAssignedProperties(propertyIds);
+
+          // Fetch property details for all assigned properties
+          if (propertyIds.length > 0) {
+            const { data: propertiesData, error: propertiesError } =
+              await supabase
+                .from("properties")
+                .select("id, token_id, name, city, state, address, location")
+                .in("token_id", propertyIds);
+
+            if (!propertiesError && propertiesData) {
+              const detailsMap: Record<number, PropertyDetails> = {};
+              (propertiesData as PropertyDetails[]).forEach((prop) => {
+                detailsMap[prop.token_id] = prop;
+              });
+              setPropertyDetailsMap(detailsMap);
+            }
+          }
         }
       } catch (error) {
-        console.error('Error checking ward boy properties:', error)
-        setAssignedProperties([])
+        console.error("Error checking ward boy properties:", error);
+        setAssignedProperties([]);
       }
-      
-      setIsChecking(false)
-    }
 
-    checkAssignedProperties()
-  }, [address, isConnected])
+      setIsChecking(false);
+    };
+
+    checkAssignedProperties();
+  }, [address, isConnected]);
+
+  const tabs = [
+    { id: "overview" as TabType, label: "Overview", icon: LayoutDashboard },
+    { id: "deposits" as TabType, label: "Deposits", icon: FileText },
+    { id: "history" as TabType, label: "History", icon: History },
+    { id: "properties" as TabType, label: "Properties", icon: Home },
+  ];
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Ward Boy Dashboard
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Connect your wallet to access the dashboard (No login required)
-          </p>
-        </div>
-
-        {/* Not Connected State */}
-        {!isConnected && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-8 text-center">
-            <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-4">
-              👛 Connect Your Wallet
-            </h3>
-            <p className="text-blue-800 dark:text-blue-200 mb-6">
-              Ward boys don't need to create an account or complete KYC.
-              <br />
-              Simply connect your assigned wallet to access the dashboard.
+          {/* Header */}
+          <div className="mb-8 bg-gradient-to-r from-purple-50 via-white to-indigo-50 rounded-2xl shadow-card p-8 border-2 border-purple-200">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              Ward Boy Dashboard
+            </h1>
+            <p className="mt-3 text-gray-700 font-medium">
+              Connect your wallet to access the dashboard (No login required)
             </p>
-            <div className="bg-blue-100 dark:bg-blue-900/40 rounded-lg p-4 text-sm text-blue-900 dark:text-blue-100">
-              <p className="font-semibold mb-2">How it works:</p>
-              <ol className="text-left space-y-1 max-w-md mx-auto">
-                <li>1. Admin assigns your wallet address to a property</li>
-                <li>2. You connect your wallet using the button in top-right</li>
-                <li>3. Dashboard automatically shows your assigned properties</li>
-                <li>4. Submit rent deposits with expense bills</li>
-              </ol>
-            </div>
           </div>
-        )}
 
-        {/* Loading State */}
-        {isChecking && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 flex flex-col items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Checking assigned properties...</p>
-          </div>
-        )}
-
-        {/* No Properties Assigned */}
-        {!isChecking && assignedProperties.length === 0 && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 flex items-start gap-3">
-            <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
-                No Properties Assigned
+          {/* Not Connected State */}
+          {!isConnected && (
+            <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-2 border-blue-200 rounded-2xl shadow-card p-8 text-center">
+              <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <span className="text-4xl">👛</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Connect Your Wallet
               </h3>
-              <p className="text-sm text-red-800 dark:text-red-200">
-                You are not assigned as ward boy for any property. Please contact the admin to get assigned.
+              <p className="text-gray-700 mb-6 text-lg">
+                Ward boys don't need to create an account or complete KYC.
+                <br />
+                Simply connect your assigned wallet to access the dashboard.
               </p>
-              <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                Your wallet: <code className="bg-red-100 dark:bg-red-900/40 px-2 py-1 rounded">{address}</code>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Assigned Properties */}
-        {!isChecking && assignedProperties.length > 0 && (
-          <div className="space-y-8">
-            {/* Success Message */}
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
-                ✓ Ward Boy Access Verified
-              </h3>
-              <p className="text-sm text-green-800 dark:text-green-200">
-                You are assigned as ward boy for {assignedProperties.length} {assignedProperties.length === 1 ? 'property' : 'properties'}:
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {assignedProperties.map(propId => (
-                  <span key={propId} className="bg-green-100 dark:bg-green-900/40 px-3 py-1 rounded-full text-sm font-medium text-green-900 dark:text-green-100">
-                    Property #{propId}
-                  </span>
-                ))}
+              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-6 text-gray-900 border-2 border-blue-200">
+                <p className="font-bold mb-4 text-lg">How it works:</p>
+                <ol className="text-left space-y-2 max-w-md mx-auto">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      1
+                    </span>
+                    <span className="font-semibold">
+                      Admin assigns your wallet address to a property
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      2
+                    </span>
+                    <span className="font-semibold">
+                      You connect your wallet using the button in top-right
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      3
+                    </span>
+                    <span className="font-semibold">
+                      Dashboard automatically shows your assigned properties
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      4
+                    </span>
+                    <span className="font-semibold">
+                      Submit rent deposits with expense bills
+                    </span>
+                  </li>
+                </ol>
               </div>
             </div>
+          )}
 
-            {/* Transaction Debugger */}
-            <TransactionDebugger 
-              propertyId={assignedProperties[0]} 
-              showWardBoyCheck={true}
-            />
-
-            {/* Deposit Forms for Each Property */}
-            {assignedProperties.map(propertyId => (
-              <div key={propertyId}>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Submit Rent Deposit - Property #{propertyId}
-                </h2>
-                <WardBoyDepositForm prefilledPropertyId={propertyId} />
-              </div>
-            ))}
-
-            {/* Instructions */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">
-                📋 Instructions
-              </h3>
-              <ol className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-                <li className="flex gap-2">
-                  <span className="font-semibold">1.</span>
-                  <span>Collect rent from tenant and handle all miscellaneous expenses</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold">2.</span>
-                  <span>Fill in the deposit form with property details and expense breakdown</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold">3.</span>
-                  <span>Upload bills and receipts for all expenses (electricity, repairs, etc.)</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold">4.</span>
-                  <span>Review the summary and approve USDC spending</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold">5.</span>
-                  <span>Submit deposit - funds will be held pending admin approval</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold">6.</span>
-                  <span>Admin will review and trigger payout distribution to shareholders</span>
-                </li>
-              </ol>
-            </div>
-
-            {/* Deposit History - TODO: Implement */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Your Deposit History
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Coming soon: View your past deposits and their status
+          {/* Loading State */}
+          {isChecking && isConnected && (
+            <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-card p-12 flex flex-col items-center justify-center border-2 border-blue-200">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+              <p className="text-gray-700 font-semibold text-lg">
+                Checking assigned properties...
               </p>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* No Properties Assigned */}
+          {!isChecking && isConnected && assignedProperties.length === 0 && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-2xl shadow-card p-6 flex items-start gap-4">
+              <div className="p-3 bg-red-100 rounded-xl flex-shrink-0">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-red-900 mb-3">
+                  No Properties Assigned
+                </h3>
+                <p className="text-sm text-red-800 font-semibold mb-3">
+                  You are not assigned as ward boy for any property. Please
+                  contact the admin to get assigned.
+                </p>
+                <p className="text-sm text-red-700 font-mono bg-red-100 px-3 py-2 rounded-lg inline-block">
+                  Your wallet: {address}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content with Tabs */}
+          {!isChecking && isConnected && assignedProperties.length > 0 && (
+            <div className="space-y-6">
+              {/* Tab Navigation */}
+              <div className="bg-white rounded-2xl shadow-card border-2 border-gray-200 overflow-hidden">
+                <div className="flex flex-wrap border-b border-gray-200">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex-1 min-w-[120px] px-6 py-4 flex items-center justify-center gap-2 font-semibold transition-all ${
+                          activeTab === tab.id
+                            ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-b-2 border-purple-600"
+                            : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="hidden sm:inline">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6">
+                  {activeTab === "overview" && (
+                    <WardBoyDashboard
+                      assignedProperties={assignedProperties}
+                      address={address!}
+                      onNavigateToDeposits={() => setActiveTab("deposits")}
+                    />
+                  )}
+
+                  {activeTab === "deposits" && (
+                    <div className="space-y-6">
+                      <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                          Submit Rent Deposit
+                        </h2>
+                        <p className="text-gray-600">
+                          Fill out the form below to deposit rent for your
+                          assigned properties
+                        </p>
+                      </div>
+                      {assignedProperties.map((propertyId) => (
+                        <div key={propertyId} className="space-y-4">
+                          <h3 className="text-xl font-bold text-gray-900 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                            Property #{propertyId}
+                          </h3>
+                          <WardBoyDepositForm
+                            prefilledPropertyId={propertyId}
+                            assignedProperties={assignedProperties}
+                            propertyDetails={propertyDetailsMap[propertyId]}
+                            onSuccess={() => setActiveTab("overview")}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {activeTab === "history" && (
+                    <DepositHistory address={address!} />
+                  )}
+
+                  {activeTab === "properties" && (
+                    <PropertyCards
+                      assignedProperties={assignedProperties}
+                      address={address!}
+                      onDepositClick={(propertyId) => {
+                        setActiveTab("deposits");
+                        // Scroll to form could be added here
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }

@@ -40,19 +40,20 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
     },
   })
 
-  // Check property count to verify tokenId is valid
-  const { data: propertyCount } = useReadContract({
+  // Check if property exists on-chain using getProperty
+  const { data: propertyData, isLoading: isLoadingProperty } = useReadContract({
     address: CONTRACTS.PropertyShare1155,
     abi: PROPERTY_SHARE_1155_ABI,
-    functionName: 'propertyCount',
+    functionName: 'getProperty',
+    args: [BigInt(tokenId)],
     query: {
-      enabled: true,
+      enabled: !!tokenId && tokenId > 0,
     },
   })
 
-  // Property exists if tokenId is > 0 and <= propertyCount
-  const propertyExists = propertyCount 
-    ? BigInt(tokenId) > 0n && BigInt(tokenId) <= (propertyCount as bigint)
+  // Property exists if getProperty returns data with exists = true
+  const propertyExists = propertyData 
+    ? (propertyData as any)?.exists === true
     : false
 
   const handleApprove = async () => {
@@ -88,6 +89,16 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
     const shares = BigInt(parseInt(amount))
     const totalPrice = pricePerShare * shares
 
+    // Critical: Check if property exists on-chain before attempting purchase
+    if (!propertyExists) {
+      alert('❌ This property does not exist on the blockchain. This may be due to contract redeployment. Please create a new property or contact support.')
+      logger.error('Purchase blocked: Property does not exist on-chain', { 
+        tokenId, 
+        contractAddress: CONTRACTS.PropertyShare1155 
+      })
+      return
+    }
+
     // Validation checks before purchase
     if (usdcBalance && (usdcBalance as bigint) < totalPrice) {
       alert('❌ Insufficient USDC balance')
@@ -111,7 +122,8 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
         shares: shares.toString(), 
         totalPrice: totalPrice.toString(),
         allowance: allowance?.toString(),
-        balance: usdcBalance?.toString()
+        balance: usdcBalance?.toString(),
+        propertyExists: true
       })
       
       // Call purchaseShares function - buyer pays with USDC directly
@@ -135,13 +147,12 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
 
   // Log transaction and reset action type when transaction succeeds
   if (isSuccess && actionType === 'buy' && hash) {
-    // Log transaction to database
+    // Log transaction to database with error handling
     const logTransaction = async () => {
       try {
         const shares = BigInt(parseInt(amount))
         const totalPrice = pricePerShare * shares
-        
-        await fetch('/api/transactions/log', {
+        const res = await fetch('/api/transactions/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -154,19 +165,24 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
             transaction_type: 'SHARE_PURCHASE',
           }),
         })
-        
-        logger.info('Transaction logged', { hash, tokenId, shares: amount })
+        const result = await res.json()
+        if (!res.ok || result.error) {
+          logger.error('API /transactions/log failed', { status: res.status, result })
+          alert('❌ Failed to update portfolio in DB. See console for details.')
+        } else {
+          logger.info('Transaction logged', { hash, tokenId, shares: amount, result })
+        }
       } catch (error) {
         logger.error('Failed to log transaction', error, { hash, tokenId })
+        alert('❌ Error logging transaction. See console for details.')
       }
     }
-    
     logTransaction()
-    
+    // Instead of reloading, refetch data (parent should refetch portfolio/property)
     setTimeout(() => {
       setActionType(null)
       setAmount('10')
-      window.location.reload() // Reload to update balances and portfolio
+      // Optionally trigger a callback or event to parent to refetch data
     }, 3000)
   }
 
@@ -186,9 +202,6 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
   const allowanceValue = allowance as bigint | undefined
   const needsApproval = allowanceValue ? allowanceValue < totalPrice : true
 
-  // Check if property is fully sold
-  const isFullySold = availableShares <= 0n
-
   if (!address) {
     return (
       <div className="text-center py-8">
@@ -200,57 +213,21 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
     )
   }
 
-  // Show message if property is fully sold
-  if (isFullySold) {
-    return (
-      <div className="animate-fade-in">
-        <div className="p-6 glass-card rounded-lg text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Property Fully Funded</h3>
-          <p className="text-gray-600 mb-4">
-            All shares for this property have been sold. Check the secondary marketplace for available listings.
-          </p>
-          <a 
-            href="/marketplace" 
-            className="inline-block btn-secondary"
-          >
-            View Marketplace
-          </a>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="animate-fade-in">
+    <div>
       {/* Number of Shares Input */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2 transition-colors duration-300">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           Number of Shares
         </label>
         <input
           type="number"
           value={amount}
-          onChange={(e) => {
-            const value = e.target.value
-            const numValue = parseInt(value)
-            // Validate: must be positive and not exceed available shares
-            if (value === '' || (numValue > 0 && numValue <= Number(availableShares))) {
-              setAmount(value)
-            } else if (numValue > Number(availableShares)) {
-              // Set to max available if user tries to exceed
-              setAmount(Number(availableShares).toString())
-            }
-          }}
+          onChange={(e) => setAmount(e.target.value)}
           min="1"
           max={Number(availableShares)}
-          className="input-field glass-input"
+          className="input-field"
           placeholder="Enter amount"
-          disabled={isFullySold}
         />
         <p className="text-sm text-gray-500 mt-1">
           Available: {Number(availableShares).toLocaleString()} shares
@@ -259,7 +236,7 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
 
       {/* Investment Breakdown */}
       {amount && (
-        <div className="mb-6 p-4 glass-card rounded-lg space-y-3 transition-all duration-300 hover:bg-white/80 animate-slide-up">
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Price per Share</span>
             <span className="font-semibold">${pricePerShareFormatted.toFixed(2)} USDC</span>
@@ -287,9 +264,16 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
       )}
 
       {/* Action Buttons */}
-      {!propertyExists && (
+      {!isLoadingProperty && !propertyExists && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
-          <p className="text-sm text-red-700">This property is not tokenized on-chain (tokenId {tokenId}). Purchases are disabled to prevent failed transactions and excessive gas estimates.</p>
+          <p className="text-sm text-red-700 font-semibold mb-2">⚠️ Property Not Found on Blockchain</p>
+          <p className="text-sm text-red-600">
+            This property (tokenId {tokenId}) does not exist on the deployed contract. 
+            This usually happens after contract redeployment. Please create a new property or contact support.
+          </p>
+          <p className="text-xs text-red-500 mt-2">
+            Contract: {CONTRACTS.PropertyShare1155}
+          </p>
         </div>
       )}
       
@@ -297,20 +281,23 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
       {process.env.NODE_ENV === 'development' && (
         <div className="p-3 bg-gray-50 border border-gray-300 rounded-lg mb-3 text-xs">
           <p><strong>Debug Info:</strong></p>
-          <p>Property Exists: {propertyExists ? '✓ Yes' : '✗ No'}</p>
-          <p>Property Count: {propertyCount?.toString() || 'Loading...'}</p>
+          <p>Property Exists (on-chain): {isLoadingProperty ? 'Loading...' : (propertyExists ? '✓ Yes' : '✗ No')}</p>
           <p>Token ID: {tokenId}</p>
+          <p>Contract Address: {CONTRACTS.PropertyShare1155}</p>
           <p>Needs Approval: {needsApproval ? 'Yes' : 'No'}</p>
           <p>Allowance: {allowance ? `${Number(allowance as bigint) / 1e6} USDC` : '0 USDC'}</p>
           <p>Required: ${totalPriceFormatted.toFixed(2)} USDC</p>
+          {propertyData && (
+            <p>Property Name: {(propertyData as any)?.name || 'N/A'}</p>
+          )}
         </div>
       )}
       
-      {needsApproval && amount && propertyExists && !isFullySold ? (
+      {needsApproval && amount && propertyExists ? (
         <>
           <button
             onClick={handleApprove}
-            disabled={!amount || isPending || isConfirming || usdcBalanceFormatted < totalPriceFormatted || isFullySold}
+            disabled={!amount || isPending || isConfirming || usdcBalanceFormatted < totalPriceFormatted}
             className="w-full btn-primary py-4 text-lg mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending || isConfirming ? (
@@ -333,7 +320,7 @@ export function BuySharesForm({ tokenId, pricePerShare, availableShares }: BuySh
       
       <button
         onClick={handleBuy}
-        disabled={!amount || needsApproval || isPending || isConfirming || usdcBalanceFormatted < totalPriceFormatted || !propertyExists || isFullySold}
+        disabled={!amount || needsApproval || isPending || isConfirming || usdcBalanceFormatted < totalPriceFormatted || !propertyExists || isLoadingProperty}
         className="w-full btn-primary py-4 text-lg mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending || isConfirming ? (

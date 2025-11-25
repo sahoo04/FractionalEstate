@@ -1,0 +1,10 @@
+{
+  "imageHash": "QmbbBCcJWZsSG9aYBoKjgzqExHMeVriuywFwaKnWrojcpK",
+  "metadataHash": "QmeZ1dfgrYDpKVWKt1xSsBNi32HBtAGUSS8jSK1hG2Xi52",
+  "imageUrl": "ipfs://QmbbBCcJWZsSG9aYBoKjgzqExHMeVriuywFwaKnWrojcpK",
+  "metadataUrl": "ipfs://QmeZ1dfgrYDpKVWKt1xSsBNi32HBtAGUSS8jSK1hG2Xi52",
+  "gatewayUrls": {
+    "image": "https://gateway.pinata.cloud/ipfs/QmbbBCcJWZsSG9aYBoKjgzqExHMeVriuywFwaKnWrojcpK",
+    "metadata": "https://gateway.pinata.cloud/ipfs/QmeZ1dfgrYDpKVWKt1xSsBNi32HBtAGUSS8jSK1hG2Xi52"
+  }
+}

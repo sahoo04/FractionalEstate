@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 
+// Disable Next.js caching for this route - always execute fresh
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 // Reject KYC
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +64,15 @@ export async function POST(request: NextRequest) {
       address,
       status: 'REJECTED',
       reason
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Surrogate-Control": "no-store",
+        "X-Accel-Expires": "0",
+        "X-Cache-Control": "no-store",
+      },
     })
   } catch (error) {
     console.error('KYC rejection error:', error)

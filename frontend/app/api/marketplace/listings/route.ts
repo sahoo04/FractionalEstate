@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     logger.info('Fetching marketplace listings')
 
     // Fetch active listings
+    // Note: Database uses 'token_id' and 'created_at' (not 'property_token_id' and 'listed_at' from migration)
     const { data: listings, error: listingsError } = await (supabaseAdmin as any)
       .from('marketplace_listings')
       .select('*')
@@ -44,18 +45,24 @@ export async function GET(request: Request) {
     }
 
     // Get unique token IDs
-    const tokenIds = [...new Set(listings.map((l: any) => l.token_id))]
+    const tokenIds = [...new Set(listings.map((l: any) => l.token_id).filter((id: any) => id != null))]
     
-    logger.info('Fetching properties for token IDs', { tokenIds })
+    logger.info('Fetching properties for token IDs', { tokenIds, count: tokenIds.length })
     
-    // Fetch property details for all token IDs
-    const { data: properties, error: propertiesError } = await (supabaseAdmin as any)
-      .from('properties')
-      .select('token_id, name, location, images, property_type, status')
-      .in('token_id', tokenIds)
+    // Fetch property details for all token IDs (only if we have tokenIds)
+    let properties: any[] = []
+    if (tokenIds.length > 0) {
+      const { data: propertiesData, error: propertiesError } = await (supabaseAdmin as any)
+        .from('properties')
+        .select('token_id, name, location, images, property_type, status')
+        .in('token_id', tokenIds)
 
-    if (propertiesError) {
-      logger.error('Error fetching properties', { error: propertiesError })
+      if (propertiesError) {
+        logger.error('Error fetching properties', { error: propertiesError })
+        // Continue with empty properties array - listings will be filtered out
+      } else {
+        properties = propertiesData || []
+      }
     }
 
     logger.info('Fetched properties', { count: properties?.length || 0, properties })
@@ -73,8 +80,13 @@ export async function GET(request: Request) {
       .map((listing: any) => {
         const property = propertiesMap.get(listing.token_id)
         
-        // Only include listings where property is ACTIVE
-        if (!property || property.status !== 'ACTIVE') {
+        // Only filter out if property doesn't exist at all
+        // Listing visibility depends on listing status (already filtered to ACTIVE), not property status
+        if (!property) {
+          logger.warn('Listing references non-existent property', { 
+            tokenId: listing.token_id, 
+            listingId: listing.listing_id 
+          })
           return null
         }
 
@@ -108,9 +120,17 @@ export async function GET(request: Request) {
     })
 
   } catch (error: any) {
-    logger.error('Error in marketplace listings API', error)
+    logger.error('Error in marketplace listings API', error, {
+      message: error?.message,
+      stack: error?.stack
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: error?.message || 'Internal server error',
+        listings: [],
+        count: 0
+      },
       { status: 500 }
     )
   }

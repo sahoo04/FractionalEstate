@@ -8,19 +8,46 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Airbnb-inspired Primary Red
+        // Premium Real Estate Primary (Warm Gold/Bronze)
         primary: {
-          50: '#FEF2F2',
-          100: '#FEE2E2',
-          200: '#FECACA',
-          300: '#FCA5A5',
-          400: '#F87171',
-          500: '#EF4444',
-          600: '#DC2626',
-          700: '#B91C1C',
-          800: '#991B1B',
-          900: '#7F1D1D',
-          DEFAULT: '#EF4444',
+          50: '#FEF7F0',
+          100: '#FDEEE0',
+          200: '#FAD9C1',
+          300: '#F7C29F',
+          400: '#F4AC7F',
+          500: '#E89250', // Main brand color
+          600: '#D47630',
+          700: '#B85F20',
+          800: '#8F4A17',
+          900: '#6B3810',
+          DEFAULT: '#E89250',
+        },
+        // Web3 Accent (Purple/Blue gradient)
+        web3: {
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#8B5CF6', // Web3 purple
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+          DEFAULT: '#8B5CF6',
+        },
+        // Success Green
+        success: {
+          50: '#ECFDF5',
+          100: '#D1FAE5',
+          200: '#A7F3D0',
+          300: '#6EE7B7',
+          400: '#34D399',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065F46',
+          900: '#064E3B',
         },
         // Teal Accent
         accent: {
@@ -34,72 +61,32 @@ module.exports = {
           700: '#0F766E',
           800: '#115E59',
           900: '#134E4A',
-          DEFAULT: '#06B6D4',
-        },
-        // Success Green
-        success: {
-          50: '#F0FDF4',
-          100: '#DCFCE7',
-          200: '#BBF7D0',
-          300: '#86EFAC',
-          400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A',
-          700: '#15803D',
-          800: '#166534',
-          900: '#14532D',
-        },
-        // Warning Yellow
-        warning: {
-          50: '#FEFCE8',
-          100: '#FEF9C3',
-          200: '#FEF08A',
-          300: '#FDE047',
-          400: '#FACC15',
-          500: '#EAB308',
-          600: '#CA8A04',
-          700: '#A16207',
-          800: '#854D0E',
-          900: '#713F12',
-        },
-        // Neutral Grays
-        neutral: {
-          50: '#F9FAFB',
-          100: '#F3F4F6',
-          200: '#E5E7EB',
-          300: '#D1D5DB',
-          400: '#9CA3AF',
-          500: '#6B7280',
-          600: '#4B5563',
-          700: '#374151',
-          800: '#1F2937',
-          900: '#111827',
+          DEFAULT: '#14B8A6',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter var', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Cal Sans', 'Inter', 'sans-serif'],
       },
       borderRadius: {
-        'xl': '12px',
-        '2xl': '16px',
+        'xl': '16px',
+        '2xl': '20px',
+        '3xl': '24px',
       },
       boxShadow: {
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-        'glass-lg': '0 20px 60px 0 rgba(31, 38, 135, 0.3)',
-        'glow': '0 0 20px rgba(239, 68, 68, 0.3)',
-        'glow-lg': '0 0 40px rgba(239, 68, 68, 0.4)',
+        'soft': '0 2px 8px 0 rgba(0, 0, 0, 0.08)',
+        'card': '0 4px 16px 0 rgba(0, 0, 0, 0.08)',
+        'card-hover': '0 12px 28px 0 rgba(0, 0, 0, 0.12)',
+        'glow': '0 0 20px rgba(139, 92, 246, 0.3)',
+        'glow-sm': '0 0 10px rgba(139, 92, 246, 0.2)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.5s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
+        'fade-in': 'fadeIn 0.5s ease-in',
+        'slide-up': 'slideUp 0.4s ease-out',
         'scale-in': 'scaleIn 0.3s ease-out',
-        'shimmer': 'shimmer 2s infinite linear',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float': 'float 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
         'ripple': 'ripple 0.6s ease-out',
+        'slide-in-right': 'slideInRight 0.3s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -107,40 +94,40 @@ module.exports = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        slideDown: {
-          '0%': { opacity: '0', transform: 'translateY(-20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
         },
         shimmer: {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
         },
-        pulse: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.5' },
-        },
         ripple: {
-          '0%': { transform: 'scale(0)', opacity: '1' },
-          '100%': { transform: 'scale(4)', opacity: '0' },
+          '0%': { transform: 'scale(0)', opacity: '0.5' },
+          '100%': { transform: 'scale(2)', opacity: '0' },
         },
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
+        slideInRight: {
+          '0%': { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
       },
-      backdropBlur: {
-        xs: '2px',
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'web3-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'gold-gradient': 'linear-gradient(135deg, #E89250 0%, #D47630 100%)',
       },
     },
   },
   plugins: [],
 }
+
+
+
+
+
 
 

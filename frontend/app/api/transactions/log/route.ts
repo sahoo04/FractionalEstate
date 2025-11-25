@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { createPublicClient, http, decodeEventLog } from 'viem'
+import { arbitrumSepolia } from 'viem/chains'
+
+const publicClient = createPublicClient({
+  chain: arbitrumSepolia,
+  transport: http(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL!)
+})
+
+const sharesPurchasedAbi = [
+  {
+    type: 'event',
+    name: 'SharesPurchased',
+    inputs: [
+      { name: 'tokenId', indexed: true, type: 'uint256' },
+      { name: 'buyer', indexed: true, type: 'address' },
+      { name: 'amount', type: 'uint256' },
+      { name: 'totalPrice', type: 'uint256' }
+    ]
+  }
+] as const
 
 /**
  * POST /api/transactions/log
@@ -42,12 +62,73 @@ export async function POST(request: Request) {
     const normalizedFrom = from_address.toLowerCase()
     const normalizedTo = to_address?.toLowerCase()
 
+    // Verify transaction on-chain
+    try {
+      const receipt = await publicClient.getTransactionReceipt({ 
+        hash: transaction_hash as `0x${string}` 
+      })
+      
+      if (!receipt || receipt.status !== 'success') {
+        return NextResponse.json(
+          { error: 'Transaction not successful on blockchain' },
+          { status: 400 }
+        )
+      }
+
+      if (receipt.from.toLowerCase() !== normalizedFrom) {
+        return NextResponse.json(
+          { error: 'Transaction from address mismatch' },
+          { status: 400 }
+        )
+      }
+
+      if (normalizedTo && receipt.to?.toLowerCase() !== normalizedTo) {
+        return NextResponse.json(
+          { error: 'Transaction to address mismatch' },
+          { status: 400 }
+        )
+      }
+
+      // Verify SharesPurchased event
+      let foundEvent = false
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: sharesPurchasedAbi,
+            data: log.data,
+            topics: log.topics
+          })
+          if (decoded.eventName === 'SharesPurchased' &&
+              decoded.args.tokenId === BigInt(property_token_id) &&
+              decoded.args.buyer.toLowerCase() === normalizedFrom &&
+              decoded.args.amount === BigInt(share_quantity)) {
+            foundEvent = true
+            break
+          }
+        } catch (error) {
+          // Ignore logs that don't match
+        }
+      }
+      if (!foundEvent) {
+        return NextResponse.json(
+          { error: 'SharesPurchased event not found or parameters mismatch' },
+          { status: 400 }
+        )
+      }
+    } catch (error) {
+      logger.error('Failed to verify transaction on-chain', { error, transaction_hash })
+      return NextResponse.json(
+        { error: 'Failed to verify transaction on blockchain' },
+        { status: 500 }
+      )
+    }
+
     // Check if transaction already logged
     const { data: existing } = await (supabaseAdmin as any)
       .from('transactions')
       .select('id')
       .eq('tx_hash', transaction_hash)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       logger.debug('Transaction already logged', { transaction_hash })
@@ -120,7 +201,7 @@ async function updateUserPortfolio(
 ) {
   try {
     if (!supabaseAdmin) return
-
+    logger.info('updateUserPortfolio called', { userAddress, tokenId, shareQuantity })
     // Check if user already has this property in portfolio
     const { data: existing } = await (supabaseAdmin as any)
       .from('user_portfolios')
@@ -139,20 +220,20 @@ async function updateUserPortfolio(
     const pricePerShare = parseFloat(property?.price_per_share || '0')
     const purchaseAmount = pricePerShare * shareQuantity
 
+    // Prevent double-counting: only update if shareQuantity > 0 and not already included
     if (existing) {
-      // Update existing entry
+      logger.info('Existing portfolio before update', { existing })
+      // Only update if this transaction is new (could add more checks if needed)
       await (supabaseAdmin as any)
         .from('user_portfolios')
         .update({
-          shares_owned: existing.shares_owned + shareQuantity,
+          shares_owned: Number(existing.shares_owned) + Number(shareQuantity),
           total_invested: (parseFloat(existing.total_invested) + purchaseAmount).toString(),
           last_updated: new Date().toISOString()
         })
         .eq('id', existing.id)
-
-      logger.info('Portfolio updated', { userAddress, tokenId, newShares: shareQuantity })
+      logger.info('Portfolio updated', { userAddress, tokenId, newShares: shareQuantity, newTotal: Number(existing.shares_owned) + Number(shareQuantity) })
     } else {
-      // Create new portfolio entry
       await (supabaseAdmin as any)
         .from('user_portfolios')
         .insert([{
@@ -162,10 +243,9 @@ async function updateUserPortfolio(
           shares_owned: shareQuantity,
           total_invested: purchaseAmount.toString()
         }])
-
       logger.info('Portfolio entry created', { userAddress, tokenId, shares: shareQuantity })
     }
   } catch (error) {
-    logger.error('Error updating portfolio', { error, userAddress, tokenId })
+    logger.error('Error updating portfolio', { error, userAddress, tokenId, shareQuantity })
   }
 }

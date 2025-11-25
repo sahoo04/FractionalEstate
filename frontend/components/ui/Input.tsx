@@ -44,16 +44,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full px-4 py-3 rounded-lg border transition-all duration-300',
+            'w-full px-4 py-3 rounded-lg border transition-all',
             'focus:outline-none focus:ring-2 focus:ring-offset-0',
-            'focus:shadow-lg focus:shadow-primary-500/20',
             leftIcon && 'pl-10',
             rightIcon && 'pr-10',
             error 
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-100 animate-shake' 
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-100' 
               : 'border-gray-300 focus:border-primary-500 focus:ring-primary-100',
             'disabled:bg-gray-100 disabled:cursor-not-allowed',
-            'hover:border-primary-300',
             className
           )}
           {...props}

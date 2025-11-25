@@ -1,0 +1,27 @@
+{
+  "name": "fractionalstay-indexer",
+  "version": "1.0.0",
+  "description": "Blockchain event indexer and database sync service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "sync": "tsx src/sync.ts",
+    "backfill": "tsx src/backfill.ts",
+    "health": "tsx src/health-check.ts",
+    "get-deployment-blocks": "tsx scripts/get-deployment-blocks.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "viem": "^2.0.0",
+    "dotenv": "^16.3.1",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

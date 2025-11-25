@@ -1,352 +1,380 @@
-# FractionalEstate
+# FractionalStay 🏠
 
-Fractional real estate ownership platform on Arbitrum. Buy property shares (ERC-1155), earn rent rewards, and trade on secondary marketplace.
+> Democratizing Real Estate Investment Through Blockchain
 
-## Overview
+FractionalStay is a decentralized platform that makes real estate investment accessible to everyone. Instead of needing crores to buy property, you can now invest in premium properties starting from just ₹10,000. Own fractional shares as ERC-1155 tokens, earn monthly rental income, and trade your shares on our secondary marketplace—all powered by blockchain for transparency and security.
 
-FractionalEstate lets you invest in real estate by buying fractional shares of properties. Each property is tokenized as ERC-1155, so you can:
+## 🎯 The Problem
 
-- Buy shares of real estate properties with USDC
-- Receive proportional rent distributions to your wallet
-- Trade shares on the secondary marketplace
-- Manage properties as a ward boy (property manager)
+Real estate has always been one of the best investment options, but it's been out of reach for most people. You need millions to buy property outright, and even if you have the money, managing properties is a hassle. Traditional real estate investment trusts (REITs) exist, but they're centralized, lack transparency, and have high entry barriers.
 
-## Current Features
+We wanted to change that. What if anyone could invest in a luxury villa or commercial property with just ₹10,000? What if all transactions were transparent and recorded on-chain? What if you could trade your property shares like stocks?
 
-**Smart Contracts:**
-- PropertyShare1155: ERC-1155 tokenized property ownership
-- RevenueSplitter: Rent distribution with ward boy system
-- Marketplace: Trade shares peer-to-peer (fixed price listings)
-- UserRegistry: Track KYC verification
+## ✨ What We Built
 
-**Frontend:**
-- Property listing & purchase
-- Dashboard (portfolio + claim rewards)
-- Marketplace (buy/sell shares)
-- Ward boy interface (deposit rent)
-- Admin panel
+FractionalStay is a complete Web3 platform for fractional real estate ownership. Here's what makes it special:
 
-**Backend:**
-- Relayer service for automated rent deposits
-- USDC stablecoin transactions
-- The Graph subgraph for data indexing
+### For Investors
+- **Low Entry Barrier**: Start investing with just ₹10,000
+- **Passive Income**: Earn monthly rent proportional to your ownership
+- **Liquidity**: Trade your shares anytime on our P2P marketplace
+- **Transparency**: All transactions on blockchain, no hidden fees
+- **Privacy**: KYC with zero-knowledge proofs—your data stays private
 
-## Tech Stack
+### For Property Owners
+- **Easy Listing**: Upload property details, set share price, and get funded
+- **Automated Management**: Assign ward boys to handle rent collection
+- **IPFS Storage**: All documents and metadata stored on decentralized storage
+- **Transparent Operations**: Every transaction visible on-chain
 
-- **Frontend:** Next.js 14, React 18, TailwindCSS, Wagmi, RainbowKit
-- **Contracts:** Solidity 0.8.20, Hardhat, OpenZeppelin
-- **Blockchain:** Arbitrum Sepolia
-- **Indexing:** The Graph
-- **Backend:** Node.js
-- **Storage:** IPFS (Pinata)
-- **Database:** Supabase (KYC, user data)
+### For Property Managers (Ward Boys)
+- **Dedicated Dashboard**: Manage multiple properties from one place
+- **Rent Collection**: Track deposits, expenses, and net revenue
+- **Bill Management**: Upload receipts and bills to IPFS
+- **Automated Payouts**: Admin approves → investors claim their share
 
-## Project Structure
+## 🏗️ Architecture
+
+We built a full-stack decentralized application with multiple components working together:
 
 ```
-contracts/
-  - PropertyShare1155.sol      ERC-1155 for property ownership
-  - RevenueSplitter.sol        Rent distribution system
-  - Marketplace.sol            Trade shares (buy/sell)
-  - UserRegistry.sol           KYC tracking
-  - scripts/                   Deploy and setup scripts
+┌─────────────────┐
+│   Next.js App   │  ← User-facing frontend
+│  (Wagmi/Rainbow)│
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+┌───▼───┐ ┌──▼──────┐
+│Supabase│ │Blockchain│
+│Database│ │ Indexer  │  ← Syncs on-chain events to DB
+└───┬───┘ └──────────┘
+    │
+┌───▼──────────────┐
+│  Smart Contracts │  ← 8 contracts on Arbitrum
+│  (Arbitrum L2)   │
+└──────────────────┘
+```
 
-frontend/
-  - app/page.tsx               Home + property listing
-  - app/property/[id]/         Buy shares
-  - app/dashboard/             Portfolio + claim rewards
-  - app/marketplace/           Trade shares
-  - app/ward-boy/              Rent deposit interface
-  - app/admin/                 Admin controls
+### Tech Stack
 
-relayer-service/               Auto-deposit rent (optional)
+**Blockchain Layer**
+- **Network**: Arbitrum Sepolia (L2 for low gas costs)
+- **Smart Contracts**: 8 Solidity contracts using OpenZeppelin
+- **Token Standard**: ERC-1155 for fractional ownership
+- **Identity**: Soulbound Tokens (SBT) for KYC verification
 
-subgraph/                      GraphQL indexing
+**Frontend**
+- **Framework**: Next.js 14 with App Router
+- **Web3**: Wagmi v2 + RainbowKit for wallet connections
+- **UI**: Tailwind CSS + Headless UI
+- **State**: Zustand for client state, React Query for server state
 
-## Setup
+**Backend & Infrastructure**
+- **Database**: Supabase (PostgreSQL) for off-chain data
+- **Storage**: IPFS via Pinata for documents and metadata
+- **Indexer**: Custom TypeScript service with reorg protection
+- **Deployment**: Vercel for frontend, self-hosted for indexer
+
+## 📁 Project Structure
+
+```
+FractionalEstate/
+├── contracts/          # Smart contracts (Hardhat)
+│   ├── contracts/      # 8 Solidity contracts
+│   ├── scripts/        # Deployment & migration scripts
+│   └── test/          # Contract tests
+├── frontend/          # Next.js web application
+│   ├── app/           # Next.js app router pages
+│   ├── components/    # React components
+│   ├── lib/           # Utilities & contract ABIs
+│   └── contexts/      # React contexts
+├── indexer/           # Blockchain event indexer
+│   └── src/           # TypeScript indexer service
+├── relayer-service/   # Rent distribution automation
+└── supabase/          # Database migrations
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- MetaMask or compatible wallet
+- Node.js 18+ and npm
+- MetaMask or any Web3 wallet
 - Arbitrum Sepolia ETH (for gas)
-- RPC URL: https://sepolia-rollup.arbitrum.io/rpc
+- Supabase account (free tier works)
 
-### Quick Setup
+### Installation
 
+1. **Clone and install dependencies**
 ```bash
-# 1. Install all dependencies
-npm run install:all
-
-# 2. Create .env in contracts/
-cd contracts
-cat > .env << EOF
-ARBITRUM_SEPOLIA_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-PRIVATE_KEY=your_wallet_key
-USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-EOF
-
-# 3. Deploy
-npm run deploy:sepolia
-npm run setup
-
-# 4. Update addresses everywhere
-cd ..
-npm run update-addresses
-
-# 5. Run frontend
-npm run dev:frontend
-```
-
-Visit `http://localhost:3000`
-
-### Manual Setup (If needed)
-
-**Contracts:**
-```bash
-cd contracts
+git clone <repository-url>
+cd FractionalEstate
 npm install
-npm run compile
-npm run deploy:sepolia
-npm run setup
+cd contracts && npm install
+cd ../frontend && npm install
+cd ../indexer && npm install
 ```
 
-Check `contracts/deployments.json` for contract addresses.
+2. **Deploy smart contracts**
+```bash
+cd contracts
+cp .env.example .env
+# Add your ARBITRUM_SEPOLIA_RPC_URL and PRIVATE_KEY
+npm run deploy:sepolia
+```
 
-**Frontend:**
+3. **Setup Supabase database**
+- Create a project at [supabase.com](https://supabase.com)
+- Run migrations from `supabase/migrations/` in SQL Editor
+- Copy your project URL and API keys
+
+4. **Configure frontend**
 ```bash
 cd frontend
-npm install
-
-# Create .env.local (auto-created by update-addresses)
-# Or manually:
-cat > .env.local << EOF
-NEXT_PUBLIC_PROPERTY_TOKEN_ADDRESS=0x...
-NEXT_PUBLIC_REVENUE_SPLITTER_ADDRESS=0x...
-NEXT_PUBLIC_MARKETPLACE_ADDRESS=0x...
-NEXT_PUBLIC_USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-EOF
-
+cp .env.example .env.local
+# Add contract addresses, Supabase keys, WalletConnect ID
 npm run dev
 ```
 
-**Relayer (Optional):**
+5. **Start the indexer** (optional, for real-time sync)
 ```bash
-cd relayer-service
-npm install
-
-cat > .env << EOF
-RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-PRIVATE_KEY=relayer_key
-USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-REVENUE_SPLITTER_ADDRESS=0x...
-INTERVAL_SECONDS=3600
-PROPERTIES=[{"tokenId":1,"amount":"1000000000"}]
-EOF
-
+cd indexer
+cp .env.example .env
+# Add RPC URL, contract addresses, Supabase keys
 npm run build
 npm start
 ```
 
-## Smart Contracts
+Visit `http://localhost:3000` and connect your wallet!
 
-### PropertyShare1155 (ERC-1155)
+## 🔐 Smart Contracts
 
-Tokenizes properties as shares. Each token ID = one property.
+All contracts are deployed on **Arbitrum Sepolia**:
 
-```
-Property #1:
-  - 1000 total shares
-  - 5 USDC per share
-  - Owners can buy/trade shares
+| Contract | Purpose |
+|----------|---------|
+| `PropertyShare1155` | ERC-1155 tokens representing property shares |
+| `RevenueSplitter` | Handles rent distribution with admin approval |
+| `Marketplace` | P2P trading of property shares |
+| `UserRegistry` | Role management (Buyer/Seller/Admin) |
+| `ZKRegistry` | Stores zero-knowledge proof hashes |
+| `IdentitySBT` | Soulbound tokens for verified users |
+| `Governance` | DAO voting (future feature) |
+| `MockUSDC` | Testnet USDC with faucet |
 
-Property #2:
-  - 5000 total shares
-  - 2 USDC per share
-  - etc...
-```
+Contract addresses are in `contracts/deployments.json`. All contracts are verified on Arbiscan.
 
-Main functions:
-- `createProperty()` - Create new property
-- `purchaseShares()` - Buy shares with USDC
-- `balanceOf()` - Check how many shares you own
+## 💡 Key Features
 
-### RevenueSplitter
+### 1. Multi-Role System
+Separate dashboards for different user types:
+- **Investors**: Browse properties, buy shares, track portfolio, claim rewards
+- **Sellers**: List properties, manage listings, track funding
+- **Admins**: Approve KYC, trigger payouts, assign ward boys
+- **Ward Boys**: Deposit rent, manage expenses, upload bills
 
-Distributes rent to shareholders proportionally.
+### 2. Two-Step Rent Distribution
+Our revenue flow prevents errors and fraud:
+1. Ward boy deposits net rent → goes to "pending" pool
+2. Admin reviews and approves → moves to "claimable" pool
+3. Investors claim their share anytime
 
-```
-Flow:
-1. Ward boy deposits net rent (e.g., 10,000 USDC)
-   -> Goes to pendingDistribution
+This two-step process ensures transparency and prevents mistakes.
 
-2. Admin calls callOutPay()
-   -> Deducts 2.5% platform fee
-   -> Remaining (9,750 USDC) available to claim
+### 3. Privacy-Preserving KYC
+We use zero-knowledge proofs for KYC:
+- Users submit documents (stored on IPFS)
+- ZK proof is generated and stored on-chain
+- Soulbound token (SBT) is minted upon approval
+- Verification data stays private, only approval status is public
 
-3. Shareholders call claim()
-   -> Get proportional share based on holdings
-   -> E.g., if you own 10% of shares, you get 975 USDC
-```
+### 4. Secondary Marketplace
+Investors can list their shares for sale at any price. Buyers purchase with USDC. The marketplace takes a 2.5% fee on trades, split between platform and protocol.
 
-Main functions:
-- `assignPropertyManager()` - Set ward boy for property
-- `depositRentByManager()` - Ward boy deposits rent
-- `callOutPay()` - Admin triggers payout
-- `claim()` - Claim your rewards
-- `getClaimableAmount()` - Check pending rewards
+### 5. Real-Time Portfolio Tracking
+Dashboard shows:
+- Total investments across all properties
+- Current portfolio value
+- Claimable rewards (ready to claim)
+- Pending rewards (awaiting admin approval)
+- Monthly yield and ROI
 
-### Marketplace
+### 6. IPFS Integration
+All property metadata, images, and documents are stored on IPFS via Pinata. Only the IPFS hash is stored on-chain, saving gas costs while maintaining decentralization.
 
-Buy and sell shares peer-to-peer at fixed prices.
+## 🔄 How It Works
 
-```
-Seller wants to sell:
-1. Creates listing (shares held in contract)
-2. Buyer purchases
-3. Fee deducted from buyer's USDC
-4. Seller gets payment, buyer gets shares
-```
+### Investment Flow
+1. User connects wallet and completes KYC
+2. Browses available properties on the marketplace
+3. Buys shares using USDC (approves USDC first if needed)
+4. Receives ERC-1155 tokens representing ownership
+5. Earns monthly rent proportional to ownership percentage
+6. Can trade shares on secondary marketplace anytime
 
-Main functions:
-- `createListing()` - List shares for sale
-- `cancelListing()` - Remove listing
-- `purchase()` - Buy shares from listing
+### Revenue Distribution Flow
+1. Ward boy collects rent from tenants
+2. Deducts expenses (maintenance, utilities, repairs)
+3. Deposits net amount to `RevenueSplitter` contract
+4. Admin reviews deposit and triggers payout
+5. Revenue is split: 3% platform fee, 97% to shareholders
+6. Investors claim their share from the contract
 
-## Frontend
+### Example Calculation
+Property generates ₹50,000/month rent:
+- Expenses: ₹5,000 (maintenance, utilities)
+- Net deposit: ₹45,000
+- Platform fee (3%): ₹1,350
+- Available for shareholders: ₹43,650
 
-**Home Page:** Browse properties, see details, mint shares
+If you own 10% of shares: ₹4,365 that month.
 
-**Dashboard:** Track your portfolio, claim rewards
+## 🗄️ Database Schema
 
-**Marketplace:** View listings, buy/sell shares from other users
+We use Supabase (PostgreSQL) for off-chain data to improve UX:
 
-**Ward Boy:** Deposit rent collected from properties and inform on major needed imporvements ad repairs
+**Core Tables:**
+- `users` - User profiles, roles, KYC status, SBT tokens
+- `properties` - Property listings with full metadata
+- `user_portfolios` - Investment holdings per user
+- `marketplace_listings` - Active sell orders
+- `marketplace_transactions` - Trade history
+- `rent_deposits` - Revenue tracking with approval workflow
+- `ward_boys` - Property manager assignments
 
-**Admin:** View system stats, simulate rent deposits (testing), revenue maagement and distrubution
+**Indexer Tables:**
+- `indexer_state` - Sync progress per contract
+- `blockchain_events` - Immutable event log
 
-## How It Works
+The blockchain indexer keeps the database in sync with on-chain events. Blockchain is the source of truth; the database is a materialized view for fast queries.
 
-### Buying Shares
+## 🧪 Testing
 
-1. Browse properties on home page
-2. Click property → view details
-3. Approve USDC (first time only)
-4. Enter amount of shares
-5. Click "Buy Shares"
-6. USDC transfers from your wallet
-7. You receive shares (ERC-1155 token)
-
-### Earning Rewards
-
-1. Ward boys deposit rent from real properties
-2. Admin triggers payout (deducts platform fee)
-3. Go to dashboard
-4. Click "Claim" on property
-5. Your proportional share of rent goes to wallet
-
-Example:
-- Property has 1000 shares
-- You own 100 shares (10%)
-- 10,000 USDC rent deposited
-- After 2.5% fee: 9,750 USDC available
-- You can claim: 975 USDC (10% of 9,750)
-
-### Trading Shares
-
-1. Go to marketplace
-2. Create listing (specify amount + price per share)
-3. Shares locked in contract
-4. Buyer purchases → USDC deducted, shares transferred
-5. You get USDC (minus 2.5% fee)
-
-Or buy shares from listings created by others.
-
-## Relayer Service
-
-Background service to automatically deposit rent. Optional - you can manually deposit instead.
-
-```bash
-# Manual deposit of 1000 USDC for property 1
-npm start 1 1000000000
-
-# Auto mode - deposits every hour
-npm start
-```
-
-## Environment Variables
-
-**Contracts (.env)**
-```env
-ARBITRUM_SEPOLIA_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-PRIVATE_KEY=your_key
-USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-```
-
-**Frontend (.env.local)**
-```env
-NEXT_PUBLIC_PROPERTY_TOKEN_ADDRESS=0x...
-NEXT_PUBLIC_REVENUE_SPLITTER_ADDRESS=0x...
-NEXT_PUBLIC_MARKETPLACE_ADDRESS=0x...
-NEXT_PUBLIC_USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_id
-```
-
-**Relayer (.env)**
-```env
-RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-PRIVATE_KEY=relayer_key
-USDC_ADDRESS=0xaf88d065e77c8cC2239327C5EDb3A432268e5831
-REVENUE_SPLITTER_ADDRESS=0x...
-```
-
-## Deployment
-
-1. Ensure .env is set in contracts/
-2. Run `npm run deploy:sepolia`
-3. Copy contract addresses from `contracts/deployments.json`
-4. Update frontend `.env.local` with addresses
-5. Run `npm run update-addresses` (auto-updates all files)
-6. `npm run dev:frontend` to start
-
-## Development
-
-**Test contracts:**
 ```bash
 cd contracts
 npm test
 ```
 
-**Check balances:**
+We have comprehensive tests for all smart contract functions including:
+- Property creation and share minting
+- Revenue distribution and claiming
+- Marketplace listing and purchasing
+- KYC and SBT minting
+- Edge cases and error handling
+
+## 🔧 Development
+
+### Running Locally
+
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+**Indexer:**
+```bash
+cd indexer
+npm run build
+npm start
+```
+
+**Contracts:**
 ```bash
 cd contracts
-npx hardhat run scripts/check-user-balance.ts --network arbitrumSepolia
-npx hardhat run scripts/check-revenue.ts --network arbitrumSepolia
+npx hardhat node  # Local testnet
+npx hardhat test  # Run tests
 ```
 
-**Local dev:**
+### Environment Variables
+
+See `.env.example` files in each directory for required variables. Key ones:
+- `ARBITRUM_SEPOLIA_RPC_URL` - RPC endpoint
+- `PRIVATE_KEY` - Deployer wallet (never commit!)
+- `PINATA_JWT` - IPFS upload token
+- `SUPABASE_URL` & `SUPABASE_SERVICE_ROLE_KEY` - Database credentials
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID
+
+## 🚢 Deployment
+
+### Frontend (Vercel)
 ```bash
-# Terminal 1: Frontend
-npm run dev:frontend
-
-# Terminal 2: Contracts (if needed)
-cd contracts && npx hardhat node
+cd frontend
+vercel --prod
 ```
 
-## Security Notes
+### Indexer (Self-hosted)
+Deploy to any Node.js hosting (Railway, Render, etc.):
+```bash
+cd indexer
+npm run build
+npm start
+```
 
-- Never commit `.env` files
-- Only test on Arbitrum Sepolia, never mainnet (without audit)
-- Fees: max 10% (enforced in contracts)
-- Pull-based distribution (users must claim rewards)
-- Review contract interactions before production
+### Smart Contracts
+Already deployed on Arbitrum Sepolia. For mainnet:
+1. Get contracts audited
+2. Update RPC URLs and deploy
+3. Verify on Arbiscan
+4. Update frontend with new addresses
 
-## Contributing
+## 📊 Project Stats
 
-Report issues on GitHub with clear description and steps to reproduce.
+- **Smart Contracts**: 8 deployed on Arbitrum Sepolia
+- **Lines of Code**: 18,000+
+- **Database Tables**: 12
+- **Frontend Components**: 50+
+- **API Routes**: 30+
+- **Test Coverage**: Comprehensive contract tests
 
-## License
+## 🎓 What We Learned
 
-MIT
+Building FractionalStay taught us a lot:
+
+- **ERC-1155 is perfect for fractional ownership** - Multi-token standard makes it easy to represent different properties
+- **Two-step payouts prevent issues** - Admin approval step catches mistakes before distribution
+- **ZK proofs + SBTs make KYC privacy-friendly** - Users stay anonymous while being verified
+- **Blockchain indexers need reorg protection** - Can't trust finality on L2s, need checkpoint system
+- **Database as materialized view** - Blockchain is truth, DB is for speed
+- **Pull-based claims save gas** - Users claim when ready vs. pushing to everyone
+- **Ward boy system scales** - Property managers handle real-world operations
+
+## 🔮 Future Roadmap
+
+- [ ] Governance voting UI for DAO features
+- [ ] Mobile app (React Native)
+- [ ] Property appreciation tracking
+- [ ] Email notifications for rent deposits
+- [ ] Multi-chain support (Polygon, Base)
+- [ ] Advanced analytics dashboard
+- [ ] Automated rent collection via oracles
+- [ ] Insurance integration for properties
+
+## ⚠️ Security Notes
+
+This is a hackathon project. Before mainnet deployment:
+
+- [ ] Professional smart contract audit
+- [ ] Rate limiting on all API endpoints
+- [ ] 2FA for high-value transactions
+- [ ] Monitoring and alerting system
+- [ ] Emergency pause mechanism
+- [ ] Comprehensive security review
+
+**Never commit private keys or secrets!**
+
+## 📝 License
+
+MIT License - feel free to use this for your own projects.
+
+## 👥 Team
+
+Built during a hackathon with lots of coffee ☕ and late-night coding sessions.
+
+---
+
+**Live Demo**: [Add your Vercel/deployment URL here]  
+**Contract Addresses**: See `contracts/deployments.json`  
+**Documentation**: Check individual README files in each directory
+
+**Questions?** Open an issue or reach out!

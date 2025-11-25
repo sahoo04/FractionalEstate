@@ -1,11 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PinataSDK } from 'pinata';
+import axios from 'axios';
+import FormData from 'form-data';
 
-// Initialize Pinata client
-const pinata = new PinataSDK({
-  pinataJwt: process.env.PINATA_JWT!,
-  pinataGateway: process.env.NEXT_PUBLIC_PINATA_GATEWAY || 'gateway.pinata.cloud',
-});
+// Pinata configuration
+const PINATA_JWT = process.env.PINATA_JWT!;
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || 'gateway.pinata.cloud';
+
+// Helper: Upload file to Pinata IPFS
+async function uploadFileToPinata(
+  file: File,
+  metadata: {
+    name: string;
+    keyvalues: Record<string, string>;
+  }
+): Promise<{ IpfsHash: string }> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const form = new FormData();
+  
+  form.append('file', buffer, {
+    filename: file.name,
+    contentType: file.type || 'application/octet-stream',
+  });
+  
+  form.append('pinataMetadata', JSON.stringify({
+    name: metadata.name,
+    keyvalues: metadata.keyvalues,
+  }));
+  
+  const res = await axios.post(
+    'https://api.pinata.cloud/pinning/pinFileToIPFS',
+    form,
+    {
+      headers: {
+        Authorization: `Bearer ${PINATA_JWT}`,
+        ...form.getHeaders(),
+      },
+    }
+  );
+  
+  return { IpfsHash: res.data.IpfsHash };
+}
+
+// Helper: Upload JSON to Pinata IPFS
+async function uploadJsonToPinata(
+  jsonObj: any,
+  metadata: {
+    name: string;
+    keyvalues: Record<string, string>;
+  }
+): Promise<{ IpfsHash: string }> {
+  const body = {
+    pinataContent: jsonObj,
+    pinataMetadata: {
+      name: metadata.name,
+      keyvalues: metadata.keyvalues,
+    },
+    pinataOptions: {
+      cidVersion: 1,
+    },
+  };
+  
+  const res = await axios.post(
+    'https://api.pinata.cloud/pinning/pinJSONToIPFS',
+    body,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${PINATA_JWT}`,
+      },
+    }
+  );
+  
+  return { IpfsHash: res.data.IpfsHash };
+}
 
 interface PropertyMetadata {
   name: string;
@@ -77,16 +144,14 @@ export async function POST(request: NextRequest) {
       const file = propertyImages[i];
       
       try {
-        const upload = await (pinata.upload as any).file(file as any, {
-          metadata: {
+        const upload = await uploadFileToPinata(file, {
             name: `${name.replace(/\s+/g, '-')}-image-${i + 1}`,
             keyvalues: {
               propertyName: name,
               fileType: 'property-image',
               index: i.toString(),
             },
-          },
-        } as any);
+        });
         
         const ipfsUrl = `ipfs://${upload.IpfsHash}`;
         imageUrls.push(ipfsUrl);
@@ -104,15 +169,13 @@ export async function POST(request: NextRequest) {
     
     if (titleDeed) {
       try {
-        const upload = await (pinata.upload as any).file(titleDeed as any, {
-          metadata: {
+        const upload = await uploadFileToPinata(titleDeed, {
             name: `${name.replace(/\s+/g, '-')}-title-deed`,
             keyvalues: {
               propertyName: name,
               fileType: 'title-deed',
             },
-          },
-        } as any);
+        });
         documents.titleDeed = `ipfs://${upload.IpfsHash}`;
         documentHashes.titleDeed = upload.IpfsHash;
         console.log('  ✅ Title deed uploaded:', upload.IpfsHash);
@@ -124,15 +187,13 @@ export async function POST(request: NextRequest) {
 
     if (valuationReport) {
       try {
-        const upload = await (pinata.upload as any).file(valuationReport as any, {
-          metadata: {
-            name: `${name.replace(/\s+/g, '-')}-valuation`,
+        const upload = await uploadFileToPinata(valuationReport, {
+            name: `${name.replace(/\s+/g, '-')}-valuation-report`,
             keyvalues: {
               propertyName: name,
               fileType: 'valuation-report',
             },
-          },
-        } as any);
+        });
         documents.valuationReport = `ipfs://${upload.IpfsHash}`;
         documentHashes.valuationReport = upload.IpfsHash;
         console.log('  ✅ Valuation report uploaded:', upload.IpfsHash);
@@ -144,15 +205,13 @@ export async function POST(request: NextRequest) {
 
     if (legalDocuments) {
       try {
-        const upload = await (pinata.upload as any).file(legalDocuments as any, {
-          metadata: {
-            name: `${name.replace(/\s+/g, '-')}-legal-docs`,
+        const upload = await uploadFileToPinata(legalDocuments, {
+            name: `${name.replace(/\s+/g, '-')}-legal-documents`,
             keyvalues: {
               propertyName: name,
               fileType: 'legal-documents',
             },
-          },
-        } as any);
+        });
         documents.legalDocuments = `ipfs://${upload.IpfsHash}`;
         documentHashes.legalDocuments = upload.IpfsHash;
         console.log('  ✅ Legal documents uploaded:', upload.IpfsHash);
@@ -181,16 +240,14 @@ export async function POST(request: NextRequest) {
 
     // ===== STEP 4: Upload Metadata JSON to IPFS =====
     try {
-      const metadataUpload = await (pinata.upload as any).json(metadata as any, {
-        metadata: {
-          name: `${name.replace(/\\s+/g, '-')}-metadata`,
+      const metadataUpload = await uploadJsonToPinata(metadata, {
+          name: `${name.replace(/\s+/g, '-')}-metadata`,
           keyvalues: {
             propertyName: name,
             seller,
             fileType: 'property-metadata',
           },
-        },
-      } as any);
+      });
 
       const metadataUri = `ipfs://${metadataUpload.IpfsHash}`;
       console.log('  ✅ Metadata JSON uploaded:', metadataUpload.IpfsHash);
@@ -205,11 +262,11 @@ export async function POST(request: NextRequest) {
         documentHashes,
         // Gateway URLs for preview/verification
         gateway: {
-          metadata: `https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${metadataUpload.IpfsHash}`,
-          images: imageHashes.map(hash => `https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${hash}`),
+          metadata: `https://${PINATA_GATEWAY}/ipfs/${metadataUpload.IpfsHash}`,
+          images: imageHashes.map(hash => `https://${PINATA_GATEWAY}/ipfs/${hash}`),
           documents: Object.entries(documentHashes).reduce((acc, [key, hash]) => ({
             ...acc,
-            [key]: `https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${hash}`,
+            [key]: `https://${PINATA_GATEWAY}/ipfs/${hash}`,
           }), {}),
         },
       });

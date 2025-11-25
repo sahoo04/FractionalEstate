@@ -1,7 +1,9 @@
 'use client'
 
+import React from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { CONTRACTS, REVENUE_SPLITTER_ABI } from '@/lib/contracts'
+import { useToast } from '@/contexts/ToastContext'
 import { logger } from '@/lib/logger'
 
 interface ClaimRewardsProps {
@@ -10,6 +12,7 @@ interface ClaimRewardsProps {
 
 export function ClaimRewards({ tokenId }: ClaimRewardsProps) {
   const { address } = useAccount()
+  const { addToast } = useToast()
   const { writeContract, data: hash, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
@@ -22,6 +25,14 @@ export function ClaimRewards({ tokenId }: ClaimRewardsProps) {
       enabled: !!address,
     },
   })
+
+  // Show success toast when claim completes
+  React.useEffect(() => {
+    if (isSuccess && claimableAmount) {
+      const claimable = Number(claimableAmount) / 1e6
+      addToast('success', `Successfully claimed $${claimable.toFixed(2)} USDC rewards!`)
+    }
+  }, [isSuccess, claimableAmount, addToast])
 
   const handleClaim = async () => {
     if (!address) return
@@ -38,6 +49,7 @@ export function ClaimRewards({ tokenId }: ClaimRewardsProps) {
         tokenId, 
         address 
       })
+      addToast('error', 'Failed to claim rewards. Please try again.')
     }
   }
 

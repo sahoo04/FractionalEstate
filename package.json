@@ -9,6 +9,7 @@
     "dev:frontend": "cd frontend && npm run dev",
     "build:relayer": "cd relayer-service && npm run build",
     "create-relayer-wallet": "node scripts/create-relayer-wallet.js",
+    "update:cancelled-listings": "npx ts-node scripts/update-cancelled-listings-db.ts",
     "install:all": "cd contracts && npm install && cd ../frontend && npm install && cd ../relayer-service && npm install && cd ../subgraph && npm install"
   },
   "keywords": [
@@ -20,6 +21,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "@tanstack/react-query": "^5.90.10",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.15.0",
+    "lucide-react": "^0.554.0"
   }
 }

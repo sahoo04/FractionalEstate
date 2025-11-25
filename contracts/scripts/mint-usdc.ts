@@ -3,11 +3,11 @@ import hre from "hardhat";
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   
-  // New USDC contract address
-  const USDC_ADDRESS = "0x08E8242c813B8a15351C99b91EE44c76C0a3a468";
+  // USDC contract address from deployments.json
+  const USDC_ADDRESS = "0x87917eE5e87Ed830F3D26A14Df3549f6A6Aa332C";
   
-  // Your wallet address - UPDATE THIS!
-  const YOUR_WALLET = "0xYourWalletAddressHere"; // CHANGE THIS TO YOUR METAMASK ADDRESS!
+  // Recipient wallet address
+  const YOUR_WALLET = "0xbae9b8b0b94ad045b0e3edb2b56cfecd7601cf53";
   
   console.log("Minting USDC from deployer:", deployer.address);
   console.log("To wallet:", YOUR_WALLET);

@@ -1,18 +1,12 @@
-import { getAddress, isAddress } from 'viem'
-import { logger } from './logger'
+import { getAddress, isAddress } from "viem";
+import { logger } from "./logger";
 
-// Deployed Contract Addresses on Arbitrum Sepolia
-// Last updated: November 23, 2025
-const DEPLOYED_ADDRESSES = {
-  PropertyShare1155: '0x7406C24Ac3e4D38b7477345C51a6528A70dd9c8b' as `0x${string}`,
-  RevenueSplitter: '0x624D82B44B6790CE3ef88E1de456E918dc77Bf2A' as `0x${string}`,
-  Marketplace: '0x1213096b326408A556905A38bf1Dd209b06e5161' as `0x${string}`,
-  Governance: '0x6286E098017A62B8D696d1a7cc4487b121C56ffe' as `0x${string}`,
-  UserRegistry: '0x8732ea38Bb0cb8daC815A1CE4dafBE206a40D995' as `0x${string}`,
-  USDC: '0x08E8242c813B8a15351C99b91EE44c76C0a3a468' as `0x${string}`,
-} as const
+// Contract addresses are loaded from environment variables (.env.local)
+// This ensures flexibility across different environments (dev, staging, production)
+// All addresses should be set in frontend/.env.local
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string}`
+const ZERO_ADDRESS =
+  "0x0000000000000000000000000000000000000000" as `0x${string}`;
 
 /**
  * Validates and checksums an Ethereum address
@@ -20,632 +14,717 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as `0x${string
  * @param name - Name of the address for error logging
  * @returns Checksummed address or zero address if invalid
  */
-function validateAndChecksumAddress(address: string | undefined, name: string): `0x${string}` {
-  if (!address || address === '') {
-    logger.warn(`Missing ${name} address, using zero address`, { address, name })
-    return ZERO_ADDRESS
+function validateAndChecksumAddress(
+  address: string | undefined,
+  name: string
+): `0x${string}` {
+  if (!address || address === "") {
+    logger.warn(`Missing ${name} address, using zero address`, {
+      address,
+      name,
+    });
+    return ZERO_ADDRESS;
   }
 
   try {
     // Validate address format
     if (!isAddress(address)) {
-      logger.error(`Invalid ${name} address format`, undefined, { address, name })
-      return ZERO_ADDRESS
+      logger.error(`Invalid ${name} address format`, undefined, {
+        address,
+        name,
+      });
+      return ZERO_ADDRESS;
     }
 
     // Get checksummed address
-    const checksummed = getAddress(address) as `0x${string}`
-    
+    const checksummed = getAddress(address) as `0x${string}`;
+
     // Log if address was changed (lowercase to checksummed)
     if (address !== checksummed) {
-      logger.debug(`Checksummed ${name} address`, { 
-        original: address, 
+      logger.debug(`Checksummed ${name} address`, {
+        original: address,
         checksummed,
-        name 
-      })
+        name,
+      });
     }
 
-    return checksummed
+    return checksummed;
   } catch (error) {
-    logger.error(`Error checksumming ${name} address`, error, { address, name })
-    return ZERO_ADDRESS
+    logger.error(`Error checksumming ${name} address`, error, {
+      address,
+      name,
+    });
+    return ZERO_ADDRESS;
   }
 }
 
+// Old Marketplace contract (for canceling old listings)
+export const OLD_MARKETPLACE_ADDRESS =
+  "0x9598601209047955c7131b7Fabd9bA0e491c82e2" as `0x${string}`;
+
+// Contract addresses - loaded directly from environment variables
+// Set these in frontend/.env.local file
 export const CONTRACTS = {
   PropertyShare1155: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_PROPERTY_TOKEN_ADDRESS || DEPLOYED_ADDRESSES.PropertyShare1155,
-    'PropertyShare1155'
+    process.env.NEXT_PUBLIC_PROPERTY_TOKEN_ADDRESS,
+    "PropertyShare1155"
   ),
   RevenueSplitter: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_REVENUE_SPLITTER_ADDRESS || DEPLOYED_ADDRESSES.RevenueSplitter,
-    'RevenueSplitter'
+    process.env.NEXT_PUBLIC_REVENUE_SPLITTER_ADDRESS,
+    "RevenueSplitter"
   ),
   Marketplace: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || DEPLOYED_ADDRESSES.Marketplace,
-    'Marketplace'
+    process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS,
+    "Marketplace"
   ),
   Governance: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_GOVERNANCE_ADDRESS || DEPLOYED_ADDRESSES.Governance,
-    'Governance'
+    process.env.NEXT_PUBLIC_GOVERNANCE_ADDRESS,
+    "Governance"
   ),
   USDC: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_USDC_ADDRESS || DEPLOYED_ADDRESSES.USDC,
-    'USDC'
+    process.env.NEXT_PUBLIC_USDC_ADDRESS,
+    "USDC"
   ),
   UserRegistry: validateAndChecksumAddress(
-    process.env.NEXT_PUBLIC_USER_REGISTRY_ADDRESS || DEPLOYED_ADDRESSES.UserRegistry,
-    'UserRegistry'
+    process.env.NEXT_PUBLIC_USER_REGISTRY_ADDRESS,
+    "UserRegistry"
   ),
-} as const
+  ZKRegistry: validateAndChecksumAddress(
+    process.env.NEXT_PUBLIC_ZK_REGISTRY_ADDRESS,
+    "ZKRegistry"
+  ),
+  IdentitySBT: validateAndChecksumAddress(
+    process.env.NEXT_PUBLIC_IDENTITY_SBT_ADDRESS,
+    "IdentitySBT"
+  ),
+} as const;
 
 // Contract ABIs will be generated by Hardhat or added manually
 // For now, we'll use minimal ABIs for the frontend
 
 export const PROPERTY_SHARE_1155_ABI = [
   {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
     inputs: [
-      { name: 'account', type: 'address' },
-      { name: 'id', type: 'uint256' }
+      { name: "account", type: "address" },
+      { name: "id", type: "uint256" },
     ],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'totalSupply',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'id', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }]
+    name: "totalSupply",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "id", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'getProperty',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: "getProperty",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
     outputs: [
       {
-        type: 'tuple',
+        type: "tuple",
         components: [
-          { name: 'name', type: 'string' },
-          { name: 'location', type: 'string' },
-          { name: 'totalShares', type: 'uint256' },
-          { name: 'pricePerShare', type: 'uint256' },
-          { name: 'exists', type: 'bool' }
-        ]
-      }
-    ]
+          { name: "name", type: "string" },
+          { name: "location", type: "string" },
+          { name: "totalShares", type: "uint256" },
+          { name: "pricePerShare", type: "uint256" },
+          { name: "seller", type: "address" },
+          { name: "exists", type: "bool" },
+        ],
+      },
+    ],
   },
   {
-    name: 'propertyCount',
-    type: 'function',
-    stateMutability: 'view',
+    name: "propertyCount",
+    type: "function",
+    stateMutability: "view",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'safeTransferFrom',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "safeTransferFrom",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'from', type: 'address' },
-      { name: 'to', type: 'address' },
-      { name: 'id', type: 'uint256' },
-      { name: 'amount', type: 'uint256' },
-      { name: 'data', type: 'bytes' }
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "id", type: "uint256" },
+      { name: "amount", type: "uint256" },
+      { name: "data", type: "bytes" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'setApprovalForAll',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "setApprovalForAll",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'operator', type: 'address' },
-      { name: 'approved', type: 'bool' }
+      { name: "operator", type: "address" },
+      { name: "approved", type: "bool" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'isApprovedForAll',
-    type: 'function',
-    stateMutability: 'view',
+    name: "isApprovedForAll",
+    type: "function",
+    stateMutability: "view",
     inputs: [
-      { name: 'account', type: 'address' },
-      { name: 'operator', type: 'address' }
+      { name: "account", type: "address" },
+      { name: "operator", type: "address" },
     ],
-    outputs: [{ name: '', type: 'bool' }]
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'uri',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'string' }]
+    name: "uri",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "string" }],
   },
   {
-    name: 'createProperty',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "createProperty",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'name', type: 'string' },
-      { name: 'location', type: 'string' },
-      { name: 'totalShares', type: 'uint256' },
-      { name: 'pricePerShare', type: 'uint256' },
-      { name: 'metadataUri', type: 'string' },
-      { name: 'initialOwner', type: 'address' },
-      { name: 'initialAmount', type: 'uint256' }
+      { name: "name", type: "string" },
+      { name: "location", type: "string" },
+      { name: "totalShares", type: "uint256" },
+      { name: "pricePerShare", type: "uint256" },
+      { name: "metadataUri", type: "string" },
+      { name: "initialOwner", type: "address" },
+      { name: "initialAmount", type: "uint256" },
     ],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'mintShares',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "mintShares",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'amount', type: 'uint256' }
+      { name: "to", type: "address" },
+      { name: "tokenId", type: "uint256" },
+      { name: "amount", type: "uint256" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'purchaseShares',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "purchaseShares",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'amount', type: 'uint256' }
+      { name: "tokenId", type: "uint256" },
+      { name: "amount", type: "uint256" },
     ],
-    outputs: []
-  }
-] as const
+    outputs: [],
+  },
+] as const;
 
 export const REVENUE_SPLITTER_ABI = [
+  // Ownership Functions
+  {
+    name: "owner",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "transferOwnership",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "newOwner", type: "address" }],
+    outputs: [],
+  },
   // Ward Boy Management Functions
   {
-    name: 'assignPropertyManager',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "assignPropertyManager",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'manager', type: 'address' }
+      { name: "tokenId", type: "uint256" },
+      { name: "manager", type: "address" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'removePropertyManager',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
+    name: "removePropertyManager",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [],
   },
   {
-    name: 'depositRentByManager',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "depositRentByManager",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'netAmount', type: 'uint256' },
-      { name: 'grossRent', type: 'uint256' },
-      { name: 'miscellaneousFee', type: 'uint256' }
+      { name: "tokenId", type: "uint256" },
+      { name: "netAmount", type: "uint256" },
+      { name: "grossRent", type: "uint256" },
+      { name: "miscellaneousFee", type: "uint256" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'callOutPay',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
+    name: "callOutPay",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [],
   },
-  
+
   // Legacy Deposit Function (Deprecated)
   {
-    name: 'depositRent',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "depositRent",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'grossRent', type: 'uint256' },
-      { name: 'maintenanceExpenses', type: 'uint256' }
+      { name: "tokenId", type: "uint256" },
+      { name: "grossRent", type: "uint256" },
+      { name: "maintenanceExpenses", type: "uint256" },
     ],
-    outputs: []
+    outputs: [],
   },
-  
+
   // Claim Functions
   {
-    name: 'claim',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: []
+    name: "claim",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [],
   },
-  
+
   // View Functions
   {
-    name: 'getClaimableAmount',
-    type: 'function',
-    stateMutability: 'view',
+    name: "getClaimableAmount",
+    type: "function",
+    stateMutability: "view",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'holder', type: 'address' }
+      { name: "tokenId", type: "uint256" },
+      { name: "holder", type: "address" },
     ],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'getPendingDistribution',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }]
+    name: "getPendingDistribution",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'isPropertyManager',
-    type: 'function',
-    stateMutability: 'view',
+    name: "isPropertyManager",
+    type: "function",
+    stateMutability: "view",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'account', type: 'address' }
+      { name: "tokenId", type: "uint256" },
+      { name: "account", type: "address" },
     ],
-    outputs: [{ name: '', type: 'bool' }]
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'propertyManagers',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address' }]
+    name: "propertyManagers",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
   },
   {
-    name: 'pendingDistribution',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }]
+    name: "pendingDistribution",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'totalDeposited',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'uint256' }]
+    name: "totalDeposited",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'platformFeeBps',
-    type: 'function',
-    stateMutability: 'view',
+    name: "totalClaimed",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "holder", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "platformFeeBps",
+    type: "function",
+    stateMutability: "view",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
-  
+  {
+    name: "propertyToken",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+
   // Events
   {
-    name: 'PropertyManagerAssigned',
-    type: 'event',
+    name: "PropertyManagerAssigned",
+    type: "event",
     inputs: [
-      { name: 'tokenId', type: 'uint256', indexed: true },
-      { name: 'manager', type: 'address', indexed: true }
-    ]
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "manager", type: "address", indexed: true },
+    ],
   },
   {
-    name: 'PropertyManagerRemoved',
-    type: 'event',
+    name: "PropertyManagerRemoved",
+    type: "event",
     inputs: [
-      { name: 'tokenId', type: 'uint256', indexed: true },
-      { name: 'manager', type: 'address', indexed: true }
-    ]
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "manager", type: "address", indexed: true },
+    ],
   },
   {
-    name: 'FundsDepositedByManager',
-    type: 'event',
+    name: "FundsDepositedByManager",
+    type: "event",
     inputs: [
-      { name: 'tokenId', type: 'uint256', indexed: true },
-      { name: 'manager', type: 'address', indexed: true },
-      { name: 'netAmount', type: 'uint256', indexed: false },
-      { name: 'grossRent', type: 'uint256', indexed: false },
-      { name: 'miscellaneousFee', type: 'uint256', indexed: false }
-    ]
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "manager", type: "address", indexed: true },
+      { name: "netAmount", type: "uint256", indexed: false },
+      { name: "grossRent", type: "uint256", indexed: false },
+      { name: "miscellaneousFee", type: "uint256", indexed: false },
+    ],
   },
   {
-    name: 'PayoutTriggered',
-    type: 'event',
+    name: "PayoutTriggered",
+    type: "event",
     inputs: [
-      { name: 'tokenId', type: 'uint256', indexed: true },
-      { name: 'grossAmount', type: 'uint256', indexed: false },
-      { name: 'platformFee', type: 'uint256', indexed: false },
-      { name: 'netForDistribution', type: 'uint256', indexed: false }
-    ]
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "grossAmount", type: "uint256", indexed: false },
+      { name: "platformFee", type: "uint256", indexed: false },
+      { name: "netForDistribution", type: "uint256", indexed: false },
+    ],
   },
   {
-    name: 'RewardClaimed',
-    type: 'event',
+    name: "RewardClaimed",
+    type: "event",
     inputs: [
-      { name: 'tokenId', type: 'uint256', indexed: true },
-      { name: 'holder', type: 'address', indexed: true },
-      { name: 'amount', type: 'uint256', indexed: false }
-    ]
-  }
-] as const
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "holder", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+  },
+] as const;
 
 export const MARKETPLACE_ABI = [
   {
-    name: 'createListing',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "createListing",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'amount', type: 'uint256' },
-      { name: 'pricePerShare', type: 'uint256' }
+      { name: "tokenId", type: "uint256" },
+      { name: "amount", type: "uint256" },
+      { name: "pricePerShare", type: "uint256" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'cancelListing',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'listingId', type: 'uint256' }],
-    outputs: []
+    name: "cancelListing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "listingId", type: "uint256" }],
+    outputs: [],
   },
   {
-    name: 'purchase',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'listingId', type: 'uint256' }],
-    outputs: []
+    name: "purchase",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "listingId", type: "uint256" }],
+    outputs: [],
   },
   {
-    name: 'getListing',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'listingId', type: 'uint256' }],
+    name: "purchasePartial",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "listingId", type: "uint256" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "getListing",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "listingId", type: "uint256" }],
     outputs: [
       {
-        type: 'tuple',
+        type: "tuple",
         components: [
-          { name: 'seller', type: 'address' },
-          { name: 'tokenId', type: 'uint256' },
-          { name: 'amount', type: 'uint256' },
-          { name: 'pricePerShare', type: 'uint256' },
-          { name: 'active', type: 'bool' }
-        ]
-      }
-    ]
+          { name: "seller", type: "address" },
+          { name: "tokenId", type: "uint256" },
+          { name: "amount", type: "uint256" },
+          { name: "pricePerShare", type: "uint256" },
+          { name: "active", type: "bool" },
+        ],
+      },
+    ],
   },
   {
-    name: 'listingCount',
-    type: 'function',
-    stateMutability: 'view',
+    name: "listingCount",
+    type: "function",
+    stateMutability: "view",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
-  }
-] as const
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "ListingCreated",
+    type: "event",
+    inputs: [
+      { name: "listingId", type: "uint256", indexed: true },
+      { name: "seller", type: "address", indexed: true },
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "pricePerShare", type: "uint256", indexed: false },
+    ],
+  },
+] as const;
 
 export const USDC_ABI = [
   {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }]
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'approve',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "approve",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' }
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
     ],
-    outputs: [{ name: '', type: 'bool' }]
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'allowance',
-    type: 'function',
-    stateMutability: 'view',
+    name: "allowance",
+    type: "function",
+    stateMutability: "view",
     inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' }
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
     ],
-    outputs: [{ name: '', type: 'uint256' }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
-    name: 'transfer',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "transfer",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' }
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
     ],
-    outputs: [{ name: '', type: 'bool' }]
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'transferFrom',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "transferFrom",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'from', type: 'address' },
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' }
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
     ],
-    outputs: [{ name: '', type: 'bool' }]
-  }
-] as const
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "faucet",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+] as const;
 
 export const USER_REGISTRY_ABI = [
   // Registration functions
   {
-    name: 'registerAsClient',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "registerAsClient",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'name', type: 'string' },
-      { name: 'email', type: 'string' }
+      { name: "name", type: "string" },
+      { name: "email", type: "string" },
     ],
-    outputs: []
+    outputs: [],
   },
   {
-    name: 'registerAsSeller',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "registerAsSeller",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'name', type: 'string' },
-      { name: 'email', type: 'string' },
-      { name: 'businessName', type: 'string' }
+      { name: "name", type: "string" },
+      { name: "email", type: "string" },
+      { name: "businessName", type: "string" },
     ],
-    outputs: []
+    outputs: [],
   },
-  
+
   // KYC functions
   {
-    name: 'submitKYC',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'documentHash', type: 'string' }],
-    outputs: []
+    name: "submitKYC",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "documentHash", type: "string" }],
+    outputs: [],
   },
   {
-    name: 'approveKYC',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: []
+    name: "approveKYC",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [],
   },
   {
-    name: 'rejectKYC',
-    type: 'function',
-    stateMutability: 'nonpayable',
+    name: "rejectKYC",
+    type: "function",
+    stateMutability: "nonpayable",
     inputs: [
-      { name: 'user', type: 'address' },
-      { name: 'reason', type: 'string' }
+      { name: "user", type: "address" },
+      { name: "reason", type: "string" },
     ],
-    outputs: []
+    outputs: [],
   },
-  
+
   // Admin functions
   {
-    name: 'addAdmin',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: []
+    name: "addAdmin",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [],
   },
   {
-    name: 'removeAdmin',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: []
+    name: "removeAdmin",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [],
   },
-  
+
   // View functions
   {
-    name: 'getUserRole',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'uint8' }]
+    name: "getUserRole",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint8" }],
   },
   {
-    name: 'getKYCStatus',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'uint8' }]
+    name: "getKYCStatus",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint8" }],
   },
   {
-    name: 'getUserProfile',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
+    name: "getUserProfile",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
     outputs: [
       {
-        type: 'tuple',
+        type: "tuple",
         components: [
-          { name: 'role', type: 'uint8' },
-          { name: 'kycStatus', type: 'uint8' },
-          { name: 'name', type: 'string' },
-          { name: 'email', type: 'string' },
-          { name: 'documentHash', type: 'string' },
-          { name: 'exists', type: 'bool' }
-        ]
-      }
-    ]
+          { name: "role", type: "uint8" },
+          { name: "kycStatus", type: "uint8" },
+          { name: "name", type: "string" },
+          { name: "email", type: "string" },
+          { name: "documentHash", type: "string" },
+          { name: "exists", type: "bool" },
+        ],
+      },
+    ],
   },
   {
-    name: 'isRegistered',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'bool' }]
+    name: "isRegistered",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'isKYCApproved',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'bool' }]
+    name: "isKYCApproved",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'isAdmin',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'bool' }]
+    name: "isAdmin",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
   },
   {
-    name: 'getRejectionReason',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'user', type: 'address' }],
-    outputs: [{ name: '', type: 'string' }]
+    name: "getRejectionReason",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "string" }],
   },
-  
+
   // Events
   {
-    name: 'UserRegistered',
-    type: 'event',
+    name: "UserRegistered",
+    type: "event",
     inputs: [
-      { name: 'user', type: 'address', indexed: true },
-      { name: 'role', type: 'uint8', indexed: false },
-      { name: 'name', type: 'string', indexed: false }
-    ]
+      { name: "user", type: "address", indexed: true },
+      { name: "role", type: "uint8", indexed: false },
+      { name: "name", type: "string", indexed: false },
+    ],
   },
   {
-    name: 'KYCSubmitted',
-    type: 'event',
+    name: "KYCSubmitted",
+    type: "event",
     inputs: [
-      { name: 'user', type: 'address', indexed: true },
-      { name: 'documentHash', type: 'string', indexed: false }
-    ]
+      { name: "user", type: "address", indexed: true },
+      { name: "documentHash", type: "string", indexed: false },
+    ],
   },
   {
-    name: 'KYCApproved',
-    type: 'event',
-    inputs: [
-      { name: 'user', type: 'address', indexed: true }
-    ]
+    name: "KYCApproved",
+    type: "event",
+    inputs: [{ name: "user", type: "address", indexed: true }],
   },
   {
-    name: 'KYCRejected',
-    type: 'event',
+    name: "KYCRejected",
+    type: "event",
     inputs: [
-      { name: 'user', type: 'address', indexed: true },
-      { name: 'reason', type: 'string', indexed: false }
-    ]
+      { name: "user", type: "address", indexed: true },
+      { name: "reason", type: "string", indexed: false },
+    ],
   },
   {
-    name: 'RoleUpdated',
-    type: 'event',
+    name: "RoleUpdated",
+    type: "event",
     inputs: [
-      { name: 'user', type: 'address', indexed: true },
-      { name: 'oldRole', type: 'uint8', indexed: false },
-      { name: 'newRole', type: 'uint8', indexed: false }
-    ]
-  }
-] as const
+      { name: "user", type: "address", indexed: true },
+      { name: "oldRole", type: "uint8", indexed: false },
+      { name: "newRole", type: "uint8", indexed: false },
+    ],
+  },
+] as const;
 
 // Role enum values for UserRegistry
 export const USER_ROLES = {
@@ -653,7 +732,7 @@ export const USER_ROLES = {
   CLIENT: 1,
   SELLER: 2,
   ADMIN: 3,
-} as const
+} as const;
 
 // KYC Status enum values for UserRegistry
 export const KYC_STATUS = {
@@ -661,6 +740,127 @@ export const KYC_STATUS = {
   PENDING: 1,
   APPROVED: 2,
   REJECTED: 3,
-} as const
+} as const;
 
+// ZKRegistry ABI
+export const ZK_REGISTRY_ABI = [
+  {
+    name: "submitProof",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "proofHash", type: "bytes32" },
+      { name: "provider", type: "string" },
+      { name: "timestamp", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "getProof",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [
+      { name: "proofHash", type: "bytes32" },
+      { name: "timestamp", type: "uint256" },
+      { name: "provider", type: "string" },
+      { name: "submittedBy", type: "address" },
+    ],
+  },
+  {
+    name: "hasProof",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "proofs",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [
+      { name: "proofHash", type: "bytes32" },
+      { name: "timestamp", type: "uint256" },
+      { name: "provider", type: "string" },
+      { name: "submittedBy", type: "address" },
+    ],
+  },
+  {
+    name: "ProofSubmitted",
+    type: "event",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "proofHash", type: "bytes32", indexed: true },
+      { name: "provider", type: "string", indexed: false },
+      { name: "timestamp", type: "uint256", indexed: false },
+      { name: "submittedBy", type: "address", indexed: true },
+    ],
+  },
+] as const;
 
+// IdentitySBT ABI
+export const IDENTITY_SBT_ABI = [
+  {
+    name: "mintSBT",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "metadataURI", type: "string" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "sbtOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "hasSBT",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "getTokenOwner",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "tokenURI",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "string" }],
+  },
+  {
+    name: "ownerOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "balanceOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "SbtMinted",
+    type: "event",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "metadataURI", type: "string", indexed: false },
+    ],
+  },
+] as const;

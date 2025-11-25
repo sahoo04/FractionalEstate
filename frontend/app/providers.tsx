@@ -1,6 +1,5 @@
 'use client'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { config } from '@/lib/wagmi'
@@ -8,15 +7,9 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { useEffect, useState } from 'react'
 import { useWalletAuth } from '@/hooks/useWalletAuth'
 import { AuthProvider } from '@/contexts/AuthContext'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-})
+import { ToastProvider } from '@/contexts/ToastContext'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from '@/lib/queryClient'
 
 // Wrapper component to use hooks inside providers
 function WalletAuthWrapper({ children }: { children: React.ReactNode }) {
@@ -36,18 +29,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={config}>
         <RainbowKitProvider modalSize="compact">
           <AuthProvider>
-            <WalletAuthWrapper>
-              {children}
-            </WalletAuthWrapper>
+            <ToastProvider>
+              <WalletAuthWrapper>
+                {children}
+              </WalletAuthWrapper>
+            </ToastProvider>
           </AuthProvider>
         </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
   )
 }
+
+
+
+
+
 
 

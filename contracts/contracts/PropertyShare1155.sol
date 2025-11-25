@@ -104,7 +104,6 @@ contract PropertyShare1155 is ERC1155URIStorage, Ownable {
 
         if (initialAmount > 0) {
             _mint(initialOwner, tokenId, initialAmount, "");
-            _totalSupply[tokenId] = initialAmount;
         }
 
         emit PropertyCreated(tokenId, name, location, totalShares, pricePerShare);
@@ -131,7 +130,6 @@ contract PropertyShare1155 is ERC1155URIStorage, Ownable {
         );
 
         _mint(to, tokenId, amount, "");
-        _totalSupply[tokenId] += amount;
         emit SharesMinted(tokenId, to, amount);
     }
 
@@ -162,7 +160,6 @@ contract PropertyShare1155 is ERC1155URIStorage, Ownable {
 
         // Mint shares to buyer
         _mint(msg.sender, tokenId, amount, "");
-        _totalSupply[tokenId] += amount;
 
         emit SharesPurchased(tokenId, msg.sender, amount, totalPrice);
     }
@@ -195,7 +192,9 @@ contract PropertyShare1155 is ERC1155URIStorage, Ownable {
     }
 
     /**
-     * @dev Override _update to track total supply
+     * @dev Override `_update` to centrally track total supply changes.
+     * OpenZeppelin's ERC1155 calls this hook for mints, burns and transfers,
+     * so updating `_totalSupply` here prevents mismatches across different mint/burn paths.
      */
     function _update(
         address from,
@@ -204,17 +203,18 @@ contract PropertyShare1155 is ERC1155URIStorage, Ownable {
         uint256[] memory values
     ) internal override {
         super._update(from, to, ids, values);
-        
+
         for (uint256 i = 0; i < ids.length; ++i) {
             uint256 id = ids[i];
             uint256 value = values[i];
-            
+
             if (from == address(0)) {
                 // Minting
                 _totalSupply[id] += value;
             }
             if (to == address(0)) {
                 // Burning
+                require(_totalSupply[id] >= value, "Burn exceeds totalSupply");
                 _totalSupply[id] -= value;
             }
         }

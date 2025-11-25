@@ -1,27 +1,17 @@
-import { useReadContract } from 'wagmi'
-import { CONTRACTS, PROPERTY_SHARE_1155_ABI } from '@/lib/contracts'
+/**
+ * Backward compatibility adapter for usePropertyData
+ * Re-exports useProperty as usePropertyData to maintain existing imports
+ * 
+ * MIGRATED TO MULTICALL - See hooks/useProperty.ts for new implementation
+ */
 
-export function usePropertyData(tokenId: number) {
-  const { data: property, isLoading, error } = useReadContract({
-    address: CONTRACTS.PropertyShare1155,
-    abi: PROPERTY_SHARE_1155_ABI,
-    functionName: 'getProperty',
-    args: [BigInt(tokenId)],
-  })
+export { useProperty as usePropertyData, useProperties } from './useProperty'
+export type { PropertyData, PropertyFullData } from './useProperty'
 
-  const { data: totalSupply } = useReadContract({
-    address: CONTRACTS.PropertyShare1155,
-    abi: PROPERTY_SHARE_1155_ABI,
-    functionName: 'totalSupply',
-    args: [BigInt(tokenId)],
-  })
 
-  return {
-    property,
-    totalSupply,
-    isLoading,
-    error,
-  }
-}
+
+
+
+
 
 

@@ -182,6 +182,61 @@ contract Marketplace is ERC1155Holder, Ownable {
     }
 
     /**
+     * @dev Purchase partial shares from a listing
+     * @param listingId Listing ID to purchase from
+     * @param amount Number of shares to purchase (must be <= listing.amount)
+     */
+    function purchasePartial(uint256 listingId, uint256 amount) external {
+        Listing storage listing = listings[listingId];
+        require(listing.active, "Listing not active");
+        require(amount > 0, "Amount must be greater than 0");
+        require(amount <= listing.amount, "Amount exceeds available shares");
+
+        uint256 totalPrice = amount * listing.pricePerShare;
+        
+        // Calculate marketplace fee
+        uint256 feeAmount = (totalPrice * marketplaceFeeBps) / 10000;
+        uint256 sellerAmount = totalPrice - feeAmount;
+
+        // Transfer USDC from buyer
+        usdc.safeTransferFrom(msg.sender, address(this), totalPrice);
+
+        // Send fee to fee recipient
+        if (feeAmount > 0 && feeRecipient != address(0)) {
+            usdc.safeTransfer(feeRecipient, feeAmount);
+        }
+
+        // Send payment to seller
+        usdc.safeTransfer(listing.seller, sellerAmount);
+
+        // Transfer tokens to buyer
+        propertyToken.safeTransferFrom(
+            address(this),
+            msg.sender,
+            listing.tokenId,
+            amount,
+            ""
+        );
+
+        // Update listing amount (reduce by purchased amount)
+        listing.amount -= amount;
+
+        // If all shares are purchased, mark listing as inactive
+        if (listing.amount == 0) {
+            listing.active = false;
+        }
+
+        emit PurchaseExecuted(
+            listingId,
+            msg.sender,
+            listing.seller,
+            listing.tokenId,
+            amount,
+            totalPrice
+        );
+    }
+
+    /**
      * @dev Get listing details
      * @param listingId Listing ID
      * @return Listing struct
@@ -210,5 +265,10 @@ contract Marketplace is ERC1155Holder, Ownable {
         emit FeeRecipientUpdated(newRecipient);
     }
 }
+
+
+
+
+
 
 

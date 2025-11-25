@@ -4,33 +4,40 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { arbitrumSepolia } from 'viem/chains'
 import { CONTRACTS, PROPERTY_SHARE_1155_ABI } from '@/lib/contracts'
 
-export const dynamic = 'force-dynamic'
-
-function getClients() {
-  const privateKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}`
+// Lazy initialization to avoid build-time errors when env vars are missing
+function getAccount() {
+  const privateKey = process.env.RELAYER_PRIVATE_KEY
   if (!privateKey) {
-    throw new Error('RELAYER_PRIVATE_KEY not configured')
+    throw new Error('RELAYER_PRIVATE_KEY environment variable is not set')
   }
+  return privateKeyToAccount(privateKey as `0x${string}`)
+}
 
-  const account = privateKeyToAccount(privateKey)
-
-  const publicClient = createPublicClient({
+function getPublicClient() {
+  const rpcUrl = process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL
+  if (!rpcUrl) {
+    throw new Error('NEXT_PUBLIC_ARBITRUM_RPC_URL environment variable is not set')
+  }
+  return createPublicClient({
     chain: arbitrumSepolia,
-    transport: http(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL)
+    transport: http(rpcUrl)
   })
+}
 
-  const walletClient = createWalletClient({
-    account,
+function getWalletClient() {
+  const rpcUrl = process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL
+  if (!rpcUrl) {
+    throw new Error('NEXT_PUBLIC_ARBITRUM_RPC_URL environment variable is not set')
+  }
+  return createWalletClient({
+    account: getAccount(),
     chain: arbitrumSepolia,
-    transport: http(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL)
+    transport: http(rpcUrl)
   })
-
-  return { publicClient, walletClient }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { publicClient, walletClient } = getClients()
     const body = await req.json()
     const { 
       name, 
@@ -49,6 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call createProperty as contract owner (relayer)
+    const walletClient = getWalletClient()
     const hash = await walletClient.writeContract({
       address: CONTRACTS.PropertyShare1155,
       abi: PROPERTY_SHARE_1155_ABI,
@@ -65,6 +73,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Wait for transaction confirmation
+    const publicClient = getPublicClient()
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
 
     return NextResponse.json({

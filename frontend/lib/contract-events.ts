@@ -1,5 +1,5 @@
 import { TransactionReceipt, Log, decodeEventLog, PublicClient } from 'viem'
-import { PROPERTY_SHARE_1155_ABI } from './contracts'
+import { PROPERTY_SHARE_1155_ABI, MARKETPLACE_ABI } from './contracts'
 import { logger } from './logger'
 
 /**
@@ -200,4 +200,112 @@ export async function getLatestTokenId(
     logger.error('❌ Failed to get latest tokenId', { error: error.message })
     return null
   }
+}
+
+/**
+ * Extract listingId from ListingCreated event in transaction receipt
+ * @param receipt Transaction receipt
+ * @returns listingId as bigint or null if extraction fails
+ */
+export function extractListingIdFromReceipt(receipt: TransactionReceipt): bigint | null {
+  try {
+    logger.debug('🔍 Extracting listingId from receipt', { 
+      logsCount: receipt.logs.length,
+      txHash: receipt.transactionHash 
+    })
+    
+    // Find ListingCreated event in logs
+    for (let i = 0; i < receipt.logs.length; i++) {
+      const log = receipt.logs[i]
+      try {
+        const decoded = decodeEventLog({
+          abi: MARKETPLACE_ABI,
+          data: log.data,
+          topics: log.topics,
+        })
+        
+        logger.debug('📋 Decoded event', { 
+          eventName: decoded.eventName, 
+          logIndex: i 
+        })
+        
+        // Check if this is ListingCreated event
+        if (decoded.eventName === 'ListingCreated' && typeof decoded.args === 'object' && decoded.args !== null && !Array.isArray(decoded.args)) {
+          // ListingCreated(uint256 indexed listingId, address indexed seller, uint256 indexed tokenId, uint256 amount, uint256 pricePerShare)
+          const args = decoded.args as Record<string, any>
+          const listingId = BigInt(args.listingId)
+          
+          logger.info('✅ ListingId extracted successfully', { listingId: listingId.toString() })
+          return listingId
+        }
+      } catch (e) {
+        // Skip logs that don't match our ABI - this is normal
+        continue
+      }
+    }
+    
+    logger.warn('⚠️ No ListingCreated event found in logs')
+    return null
+  } catch (error) {
+    logger.error('❌ Error extracting listingId from receipt', error)
+    return null
+  }
+}
+
+/**
+ * Extract listingId from ListingCreated event with retry mechanism
+ * @param txHash Transaction hash
+ * @param publicClient Viem public client
+ * @param maxRetries Maximum number of retry attempts (default: 3)
+ * @returns listingId as bigint or null if extraction fails
+ */
+export async function extractListingIdWithRetry(
+  txHash: string,
+  publicClient: PublicClient,
+  maxRetries: number = 3
+): Promise<bigint | null> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      logger.info('🔄 Attempting listingId extraction', { attempt, maxRetries, txHash })
+      
+      // Wait progressively longer for logs to be indexed
+      if (attempt > 1) {
+        const waitTime = 2000 * attempt // 2s, 4s, 6s
+        logger.debug('⏳ Waiting for logs to be indexed', { waitTime })
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
+      
+      // Fetch transaction receipt with logs
+      const receipt = await publicClient.getTransactionReceipt({ 
+        hash: txHash as `0x${string}` 
+      })
+      
+      if (!receipt) {
+        logger.warn('⚠️ Receipt not found', { attempt })
+        continue
+      }
+      
+      // Try to extract listingId
+      const listingId = extractListingIdFromReceipt(receipt)
+      
+      if (listingId !== null) {
+        logger.info('✅ ListingId extracted successfully', { 
+          listingId: listingId.toString(), 
+          attempt 
+        })
+        return listingId
+      }
+      
+      logger.warn('⚠️ No listingId in logs, will retry', { attempt, logsCount: receipt.logs.length })
+      
+    } catch (error: any) {
+      logger.error('❌ Extraction attempt failed', { 
+        attempt, 
+        error: error.message 
+      })
+    }
+  }
+  
+  logger.error('❌ Failed to extract listingId after all retries', { maxRetries })
+  return null
 }

@@ -4,6 +4,7 @@ import { useAccount, useDisconnect } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { MintUSDCButton } from '@/components/MintUSDCButton'
 import { formatAddress } from '@/lib/utils'
 import { useUserRole } from '@/hooks/useUserRole'
 
@@ -51,13 +52,13 @@ export function WalletButton() {
         </button>
         
         {/* Dropdown Menu */}
-        <div className="absolute right-0 mt-2 w-48 glass-modal rounded-lg shadow-lg border border-gray-200/50 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 animate-slide-down">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
           <div className="px-4 py-2 text-sm text-gray-500 border-b">
             {role !== 'NONE' ? role : 'Not Registered'}
           </div>
           <Link 
             href="/dashboard" 
-            className="block px-4 py-2 text-sm hover:bg-white/50 transition-all duration-300 hover:scale-105"
+            className="block px-4 py-2 text-sm hover:bg-gray-50"
           >
             Dashboard
           </Link>
@@ -65,7 +66,7 @@ export function WalletButton() {
           {role === 'ADMIN' && (
             <Link 
               href="/admin" 
-              className="block px-4 py-2 text-sm hover:bg-white/50 transition-all duration-300 hover:scale-105"
+              className="block px-4 py-2 text-sm hover:bg-gray-50"
             >
               Admin Panel
             </Link>
@@ -74,7 +75,7 @@ export function WalletButton() {
           {role === 'NONE' && (
             <Link 
               href="/register" 
-              className="block px-4 py-2 text-sm hover:bg-white/50 transition-all duration-300 hover:scale-105"
+              className="block px-4 py-2 text-sm hover:bg-gray-50"
             >
               Register Account
             </Link>
@@ -83,14 +84,18 @@ export function WalletButton() {
           {kycStatus === 'NONE' && role !== 'NONE' && role !== 'ADMIN' && (
             <Link 
               href="/kyc" 
-              className="block px-4 py-2 text-sm hover:bg-white/50 transition-all duration-300 hover:scale-105"
+              className="block px-4 py-2 text-sm hover:bg-gray-50"
             >
               Complete KYC
             </Link>
           )}
+          {/* Mint Test USDC - Only on testnet */}
+          <div className="px-4 py-2 border-t border-gray-200">
+            <MintUSDCButton variant="compact" className="w-full" />
+          </div>
           <button 
             onClick={() => disconnect()}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50/50 transition-all duration-300 hover:scale-105"
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
           >
             Disconnect
           </button>
@@ -99,3 +104,8 @@ export function WalletButton() {
     </div>
   )
 }
+
+
+
+
+

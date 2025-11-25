@@ -1,0 +1,37 @@
+{
+  "name": "FractionalStay Identity Badge",
+  "description": "Verified KYC Identity - Soulbound Token (Non-Transferable)",
+  "image": "ipfs://QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "attributes": [
+    {
+      "trait_type": "Verification Status",
+      "value": "KYC Approved"
+    },
+    {
+      "trait_type": "Badge Type",
+      "value": "Identity SBT"
+    },
+    {
+      "trait_type": "Platform",
+      "value": "FractionalStay"
+    },
+    {
+      "trait_type": "Blockchain",
+      "value": "Arbitrum Sepolia"
+    },
+    {
+      "trait_type": "Transferable",
+      "value": "No"
+    },
+    {
+      "trait_type": "Verification Provider",
+      "value": "FractionalStay KYC"
+    }
+  ],
+  "properties": {
+    "category": "Identity",
+    "type": "Soulbound Token",
+    "verified": true,
+    "issued_by": "FractionalStay Platform"
+  }
+}

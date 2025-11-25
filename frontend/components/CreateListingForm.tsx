@@ -1,251 +1,503 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
-import { CONTRACTS, MARKETPLACE_ABI, PROPERTY_SHARE_1155_ABI } from '@/lib/contracts'
-import { logger } from '@/lib/logger'
+import { useState, useEffect } from "react";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useReadContract,
+  usePublicClient,
+} from "wagmi";
+import {
+  CONTRACTS,
+  MARKETPLACE_ABI,
+  PROPERTY_SHARE_1155_ABI,
+} from "@/lib/contracts";
+import { logger } from "@/lib/logger";
+import {
+  extractListingIdFromReceipt,
+  extractListingIdWithRetry,
+} from "@/lib/contract-events";
+import {
+  X,
+  Store,
+  TrendingUp,
+  DollarSign,
+  Package,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
+import { createPortal } from "react-dom";
 
 interface CreateListingFormProps {
-  tokenId: number
-  propertyName: string
-  userBalance: bigint
-  pricePerShareMarket?: number
-  onSuccess?: () => void
+  tokenId: number;
+  propertyName: string;
+  userBalance: bigint;
+  pricePerShareMarket?: number;
+  onSuccess?: () => void;
 }
 
-export function CreateListingForm({ 
-  tokenId, 
+export function CreateListingForm({
+  tokenId,
   propertyName,
-  userBalance, 
+  userBalance,
   pricePerShareMarket,
-  onSuccess 
+  onSuccess,
 }: CreateListingFormProps) {
-  const { address } = useAccount()
-  const [amount, setAmount] = useState('')
-  const [pricePerShare, setPricePerShare] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [syncingToDatabase, setSyncingToDatabase] = useState(false)
-  
-  const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { address } = useAccount();
+  const publicClient = usePublicClient();
+  const [amount, setAmount] = useState("");
+  const [pricePerShare, setPricePerShare] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [extractedListingId, setExtractedListingId] = useState<number | null>(
+    null
+  );
+  const [syncingToDatabase, setSyncingToDatabase] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const { data: isApproved } = useReadContract({
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  const {
+    isLoading: isConfirming,
+    isSuccess,
+    data: receipt,
+  } = useWaitForTransactionReceipt({ hash });
+
+  const { data: isApproved, refetch: refetchApproval } = useReadContract({
     address: CONTRACTS.PropertyShare1155,
     abi: PROPERTY_SHARE_1155_ABI,
-    functionName: 'isApprovedForAll',
+    functionName: "isApprovedForAll",
     args: [address!, CONTRACTS.Marketplace],
     query: {
       enabled: !!address,
     },
-  })
+  });
 
-  // Read listing count to get the next listingId
-  const { data: listingCount, refetch: refetchListingCount } = useReadContract({
-    address: CONTRACTS.Marketplace,
-    abi: MARKETPLACE_ABI,
-    functionName: 'listingCount',
-    query: {
-      enabled: !!address,
-    },
-  })
-
-  // Sync to database after successful listing creation
+  // Refetch approval status after transaction confirms
   useEffect(() => {
-    if (isSuccess && address && amount && pricePerShare) {
-      const syncToDatabase = async () => {
-        setSyncingToDatabase(true)
-        try {
-          // Refetch listingCount to get updated value from blockchain
-          const { data: updatedCount } = await refetchListingCount()
-          const listingId = Number(updatedCount || 0)
+    if (isSuccess && !isApproved) {
+      // Approval transaction succeeded, refetch approval status
+      setTimeout(() => {
+        refetchApproval();
+      }, 1000);
+    }
+  }, [isSuccess, isApproved, refetchApproval]);
 
-          if (listingId === 0) {
-            console.error('❌ Could not get listing ID from blockchain')
-            return
+  // Extract listingId and sync to database after successful listing creation
+  useEffect(() => {
+    if (
+      isSuccess &&
+      hash &&
+      receipt &&
+      publicClient &&
+      address &&
+      amount &&
+      pricePerShare
+    ) {
+      const extractAndSync = async () => {
+        try {
+          logger.info(
+            "✅ Transaction confirmed, extracting listingId and syncing to database",
+            { txHash: hash }
+          );
+
+          // Method 1: Try extracting from current receipt first (fast)
+          let listingId = extractListingIdFromReceipt(receipt as any);
+
+          // Method 2: If failed, retry with fresh receipt fetch
+          if (!listingId && hash) {
+            logger.warn(
+              "⚠️ Initial extraction failed, trying with retry mechanism"
+            );
+            listingId = await extractListingIdWithRetry(hash, publicClient, 3);
           }
 
-          const priceInUsdc = parseFloat(pricePerShare)
-          const sharesAmount = parseInt(amount)
-          const totalPrice = priceInUsdc * sharesAmount
+          if (!listingId) {
+            logger.warn(
+              "⚠️ Could not extract listingId from transaction receipt"
+            );
+            // Still close form
+            setTimeout(() => {
+              setShowForm(false);
+              setAmount("");
+              setPricePerShare("");
+              onSuccess?.();
+            }, 2000);
+            return;
+          }
 
-          console.log('🔄 Syncing listing to database:', {
-            listingId,
-            tokenId,
-            propertyName,
-            sharesAmount,
-            pricePerShare: priceInUsdc,
-            seller: address
-          })
+          const listingIdNum = Number(listingId);
+          setExtractedListingId(listingIdNum);
+          logger.info("✅ ListingId extracted successfully", {
+            listingId: listingIdNum,
+          });
 
-          logger.info('Syncing listing to database', {
-            listingId,
-            tokenId,
-            propertyName,
-            sharesAmount,
-            pricePerShare: priceInUsdc
-          })
+          // Sync to database directly from blockchain (indexer may not be running)
+          setSyncingToDatabase(true);
+          try {
+            logger.info("🔄 Syncing listing from blockchain to database", {
+              listingId: listingIdNum,
+            });
 
-          const response = await fetch('/api/marketplace/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              listingId,
-              sellerWallet: address,
-              tokenId,
-              propertyName,
-              sharesAmount,
-              pricePerShare: priceInUsdc.toString(),
-              totalPrice: totalPrice.toString()
-            })
-          })
+            // Read listing data from blockchain and sync to database
+            const response = await fetch(
+              "/api/marketplace/sync-from-blockchain",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  listingId: listingIdNum,
+                }),
+              }
+            );
 
-          if (response.ok) {
-            const data = await response.json()
-            console.log('✅ Listing synced to database successfully:', data)
-            logger.info('Listing synced to database successfully')
-          } else {
-            const errorData = await response.text()
-            console.error('❌ Failed to sync listing:', response.status, errorData)
-            logger.error('Failed to sync listing to database', { status: response.status, error: errorData })
+            if (response.ok) {
+              const data = await response.json();
+              logger.info("✅ Listing synced to database successfully", {
+                listingId: listingIdNum,
+              });
+              console.log("✅ Listing synced to database:", data);
+            } else {
+              const errorData = await response.text();
+              logger.error("❌ Failed to sync listing to database", {
+                status: response.status,
+                error: errorData,
+                listingId: listingIdNum,
+              });
+              console.error(
+                "❌ Failed to sync listing:",
+                response.status,
+                errorData
+              );
+            }
+          } catch (error) {
+            logger.error("❌ Error syncing listing to database", error, {
+              listingId: listingIdNum,
+            });
+            console.error("❌ Error syncing listing to database:", error);
+          } finally {
+            setSyncingToDatabase(false);
+            // Close form after showing success message
+            setTimeout(() => {
+              setShowForm(false);
+              setAmount("");
+              setPricePerShare("");
+              setExtractedListingId(null);
+              onSuccess?.();
+            }, 2000);
           }
         } catch (error) {
-          console.error('❌ Error syncing listing to database:', error)
-          logger.error('Error syncing listing to database', error)
-        } finally {
-          setSyncingToDatabase(false)
+          logger.error("❌ Error extracting listingId", error);
+          setSyncingToDatabase(false);
           setTimeout(() => {
-            setShowForm(false)
-            setAmount('')
-            setPricePerShare('')
-            onSuccess?.()
-          }, 2000)
+            setShowForm(false);
+            setAmount("");
+            setPricePerShare("");
+            onSuccess?.();
+          }, 2000);
         }
-      }
+      };
 
-      // Wait a bit for blockchain to update, then sync
-      setTimeout(syncToDatabase, 1000)
+      extractAndSync();
     }
-  }, [isSuccess, address, amount, pricePerShare, tokenId, propertyName, onSuccess, refetchListingCount])
+  }, [
+    isSuccess,
+    hash,
+    receipt,
+    publicClient,
+    address,
+    amount,
+    pricePerShare,
+    tokenId,
+    propertyName,
+    onSuccess,
+  ]);
 
   const handleApprove = async () => {
-    if (!address) return
+    if (!address) return;
 
     try {
       writeContract({
         address: CONTRACTS.PropertyShare1155,
         abi: PROPERTY_SHARE_1155_ABI,
-        functionName: 'setApprovalForAll',
+        functionName: "setApprovalForAll",
         args: [CONTRACTS.Marketplace, true],
-      })
+      });
     } catch (error) {
-      logger.error('Error approving marketplace', error, { tokenId, address })
+      logger.error("Error approving marketplace", error, { tokenId, address });
     }
-  }
+  };
 
   const handleCreateListing = async () => {
-    if (!address || !amount || !pricePerShare) return
+    if (!address || !amount || !pricePerShare) return;
+
+    // Force refetch approval status before creating listing
+    const { data: currentApproval } = await refetchApproval();
+
+    // Verify approval before attempting to create listing
+    if (!currentApproval) {
+      alert("Please approve the marketplace first");
+      return;
+    }
+
+    // Verify user has enough shares
+    if (BigInt(amount) > userBalance) {
+      alert(
+        `You only have ${userBalance.toString()} shares but trying to list ${amount}`
+      );
+      return;
+    }
 
     try {
       // Price per share should be in USDC (6 decimals)
-      const priceInUsdc = BigInt(Math.floor(parseFloat(pricePerShare) * 1e6))
-      
+      const priceInUsdc = BigInt(Math.floor(parseFloat(pricePerShare) * 1e6));
+
       writeContract({
         address: CONTRACTS.Marketplace,
         abi: MARKETPLACE_ABI,
-        functionName: 'createListing',
+        functionName: "createListing",
         args: [BigInt(tokenId), BigInt(amount), priceInUsdc],
-      })
+        account: address,
+      });
     } catch (error) {
-      logger.error('Error creating listing', error, { tokenId, amount, pricePerShare, address })
+      logger.error("Error creating listing", error, {
+        tokenId,
+        amount,
+        pricePerShare,
+        address,
+      });
     }
-  }
+  };
 
   if (!showForm) {
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
+        className="w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-sm transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
       >
+        <Store className="h-4 w-4 group-hover:scale-110 transition-transform" />
         List for Sale
       </button>
-    )
+    );
   }
 
-  return (
-    <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="font-semibold text-gray-900">Create Listing</h4>
-        <button
-          onClick={() => setShowForm(false)}
-          className="text-gray-500 hover:text-gray-700"
+  if (!mounted) return null;
+
+  const modalContent = (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-200"
+        onClick={() => setShowForm(false)}
+      />
+
+      {/* Dialog */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200 overflow-hidden border border-purple-200 dark:border-purple-800"
+          onClick={(e) => e.stopPropagation()}
         >
-          ✕
-        </button>
-      </div>
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-8 text-white">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIwLjUiIG9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20"></div>
 
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm text-gray-700 mb-1">
-            Number of Shares (Max: {Number(userBalance)})
-          </label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            max={Number(userBalance)}
-            min="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-            placeholder="10"
-          />
-        </div>
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-        <div>
-          <label className="block text-sm text-gray-700 mb-1">
-            Price per Share (USDC)
-          </label>
-          <input
-            type="number"
-            value={pricePerShare}
-            onChange={(e) => setPricePerShare(e.target.value)}
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-            placeholder="100.00"
-          />
-        </div>
-
-        {amount && pricePerShare && (
-          <div className="p-2 bg-white rounded border border-purple-200">
-            <div className="text-xs text-gray-600 mb-1">Total Listing Value</div>
-            <div className="text-lg font-bold text-purple-600">
-              ₹{((parseFloat(amount) * parseFloat(pricePerShare)) * 100).toLocaleString()}
+            <div className="relative flex items-center gap-3 mb-2">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Store className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold">List Shares for Sale</h3>
+                <p className="text-purple-100 text-sm mt-0.5">{propertyName}</p>
+              </div>
             </div>
           </div>
-        )}
 
-        {!isApproved ? (
-          <button
-            onClick={handleApprove}
-            disabled={isPending || isConfirming}
-            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium disabled:opacity-50"
-          >
-            {isPending || isConfirming ? 'Approving...' : 'Approve Marketplace'}
-          </button>
-        ) : (
-          <button
-            onClick={handleCreateListing}
-            disabled={!amount || !pricePerShare || isPending || isConfirming}
-            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-medium disabled:opacity-50"
-          >
-            {isPending || isConfirming ? 'Creating...' : 'Create Listing'}
-          </button>
-        )}
+          {/* Content */}
+          <div className="p-6 space-y-5">
+            {/* Available Shares Info */}
+            <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Available Shares
+                </span>
+              </div>
+              <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                {Number(userBalance)}
+              </span>
+            </div>
 
-        {(isSuccess || syncingToDatabase) && (
-          <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-            {syncingToDatabase ? '⏳ Syncing to database...' : '✓ Listing created successfully!'}
+            {/* Number of Shares Input */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <TrendingUp className="h-4 w-4 text-purple-600" />
+                Number of Shares to Sell
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  max={Number(userBalance)}
+                  min="1"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-lg font-semibold"
+                  placeholder="Enter amount"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Max: {Number(userBalance)}
+                </div>
+              </div>
+            </div>
+
+            {/* Price per Share Input */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <DollarSign className="h-4 w-4 text-purple-600" />
+                Price per Share (USDC)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={pricePerShare}
+                  onChange={(e) => setPricePerShare(e.target.value)}
+                  step="0.01"
+                  min="0.01"
+                  className="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-lg font-semibold"
+                  placeholder="0.00"
+                />
+              </div>
+              {pricePerShare && parseFloat(pricePerShare) > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  = {(parseFloat(pricePerShare) * 1e6).toLocaleString()} USDC (6
+                  decimals)
+                </p>
+              )}
+            </div>
+
+            {/* Total Value Display */}
+            {amount && pricePerShare && (
+              <div className="relative p-5 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-xl border-2 border-purple-200 dark:border-purple-700 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-indigo-600/5"></div>
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
+                      Total Listing Value
+                    </div>
+                    <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      $
+                      {(parseFloat(amount) * parseFloat(pricePerShare)).toFixed(
+                        2
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      {amount} shares × ${parseFloat(pricePerShare).toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-purple-600/10 rounded-xl">
+                    <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-3 pt-2">
+              {!isApproved ? (
+                <>
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                      You need to approve the marketplace contract to list your
+                      shares for sale. This is a one-time approval.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleApprove}
+                    disabled={isPending || isConfirming}
+                    className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  >
+                    {isPending || isConfirming ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Approving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-5 w-5" />
+                        Approve Marketplace
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleCreateListing}
+                  disabled={
+                    !amount || !pricePerShare || isPending || isConfirming
+                  }
+                  className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                  {isPending || isConfirming ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Creating Listing...
+                    </>
+                  ) : (
+                    <>
+                      <Store className="h-5 w-5" />
+                      Create Listing
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Success/Loading Message */}
+              {(isSuccess || syncingToDatabase) && (
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                  <div className="flex items-center gap-3 mb-2">
+                    {syncingToDatabase ? (
+                      <>
+                        <Loader2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 animate-spin flex-shrink-0" />
+                        <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                          Syncing to database...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                        <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                          Listing created successfully!
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {extractedListingId && !syncingToDatabase && (
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 ml-8">
+                      Listing ID: #{extractedListingId} • Synced to database
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  )
+    </>
+  );
+
+  return createPortal(modalContent, document.body);
 }

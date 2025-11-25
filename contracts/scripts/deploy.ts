@@ -85,6 +85,22 @@ async function main() {
   const governanceAddress = await governance.getAddress();
   console.log("Governance deployed to:", governanceAddress);
 
+  // Deploy ZKRegistry
+  console.log("\nDeploying ZKRegistry...");
+  const ZKRegistry = await ethers.getContractFactory("ZKRegistry");
+  const zkRegistry = await ZKRegistry.deploy(deployer.address);
+  await zkRegistry.waitForDeployment();
+  const zkRegistryAddress = await zkRegistry.getAddress();
+  console.log("ZKRegistry deployed to:", zkRegistryAddress);
+
+  // Deploy IdentitySBT
+  console.log("\nDeploying IdentitySBT...");
+  const IdentitySBT = await ethers.getContractFactory("IdentitySBT");
+  const identitySBT = await IdentitySBT.deploy(deployer.address);
+  await identitySBT.waitForDeployment();
+  const identitySBTAddress = await identitySBT.getAddress();
+  console.log("IdentitySBT deployed to:", identitySBTAddress);
+
   // Save deployment addresses
   const deploymentInfo = {
     network: "arbitrumSepolia",
@@ -94,6 +110,8 @@ async function main() {
       RevenueSplitter: revenueSplitterAddress,
       Marketplace: marketplaceAddress,
       Governance: governanceAddress,
+      ZKRegistry: zkRegistryAddress,
+      IdentitySBT: identitySBTAddress,
     },
     usdc: USDC_ADDRESS,
     timestamp: new Date().toISOString(),
@@ -108,6 +126,8 @@ async function main() {
   console.log("RevenueSplitter:", revenueSplitterAddress);
   console.log("Marketplace:", marketplaceAddress);
   console.log("Governance:", governanceAddress);
+  console.log("ZKRegistry:", zkRegistryAddress);
+  console.log("IdentitySBT:", identitySBTAddress);
   console.log("USDC:", USDC_ADDRESS);
 }
 
@@ -117,3 +137,5 @@ main()
     console.error(error);
     process.exit(1);
   });
+
+

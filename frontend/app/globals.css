@@ -2,123 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Animation Keyframes */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(4);
-    opacity: 0;
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-5px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(5px);
-  }
-}
-
 @layer base {
   * {
     @apply border-gray-200;
   }
   
-  html {
-    scroll-behavior: smooth;
-  }
-  
   body {
     @apply bg-neutral-50 text-neutral-900;
     font-feature-settings: 'rlig' 1, 'calt' 1;
-  }
-  
-  /* Respect reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
   }
   
   h1 {
@@ -222,131 +113,6 @@
   .shadow-glow {
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
   }
-  
-  .shadow-glow-lg {
-    box-shadow: 0 0 40px rgba(239, 68, 68, 0.4);
-  }
-  
-  /* Glass Morphism Utilities */
-  .glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  }
-  
-  .glass-light {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-  }
-  
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  }
-  
-  .glass-nav {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
-  }
-  
-  .glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  }
-  
-  .glass-modal {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 20px 60px 0 rgba(31, 38, 135, 0.3);
-  }
-  
-  .glass-input {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
-  
-  /* Animation Utilities */
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
-  
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
-  }
-  
-  .animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
-  }
-  
-  .animate-shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(
-      to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 1000px 100%;
-  }
-  
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-  
-  .animate-shake {
-    animation: shake 0.5s ease-in-out;
-  }
-  
-  /* Stagger Animation Delays */
-  .stagger-1 {
-    animation-delay: 0.1s;
-  }
-  
-  .stagger-2 {
-    animation-delay: 0.2s;
-  }
-  
-  .stagger-3 {
-    animation-delay: 0.3s;
-  }
-  
-  .stagger-4 {
-    animation-delay: 0.4s;
-  }
-  
-  .stagger-5 {
-    animation-delay: 0.5s;
-  }
-  
-  .stagger-6 {
-    animation-delay: 0.6s;
-  }
 }
 
 :root {
@@ -378,62 +144,33 @@ body {
 @layer components {
   /* Card Styles */
   .card {
-    @apply bg-white rounded-lg shadow-sm p-6 border border-gray-100
-    transition-all duration-300;
+    @apply bg-white rounded-lg shadow-sm p-6 border border-gray-100;
   }
   
   .card-hover {
-    @apply card hover:shadow-lg hover:-translate-y-1 hover:border-primary-200
-    transition-all duration-300;
-  }
-  
-  .card-glass {
-    @apply glass-card rounded-xl p-6
-    transition-all duration-300 hover:shadow-xl hover:-translate-y-2
-    hover:bg-white/80;
-  }
-  
-  .card-interactive-glass {
-    @apply card-glass cursor-pointer
-    hover:scale-[1.02] active:scale-[0.98];
+    @apply card hover:shadow-md transition-shadow duration-200;
   }
   
   /* Button Styles */
   .btn-primary {
     @apply bg-primary-500 text-white px-6 py-3 rounded-md font-medium 
-    hover:bg-primary-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
-    hover:scale-105 hover:shadow-lg hover:shadow-primary-500/50 active:scale-95;
+    hover:bg-primary-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
   .btn-secondary {
     @apply bg-white text-primary-500 px-6 py-3 rounded-md font-medium border-2 border-primary-500
-    hover:bg-primary-500 hover:text-white transition-all duration-300
-    hover:scale-105 hover:shadow-lg active:scale-95;
+    hover:bg-primary-500 hover:text-white transition-all duration-200;
   }
 
   .btn-outline {
     @apply border border-gray-300 text-gray-700 px-6 py-3 rounded-md font-medium
-    hover:border-primary-500 hover:text-primary-500 transition-all duration-300
-    hover:scale-105 hover:shadow-md active:scale-95;
-  }
-  
-  .btn-glass {
-    @apply glass-light text-gray-800 px-6 py-3 rounded-md font-medium
-    hover:bg-white/90 transition-all duration-300
-    hover:scale-105 hover:shadow-lg active:scale-95;
+    hover:border-primary-500 hover:text-primary-500 transition-all duration-200;
   }
   
   /* Input Styles */
   .input-field {
     @apply w-full px-4 py-2.5 rounded-md border border-gray-300 focus:border-primary-500 
-    focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-300
-    focus:shadow-lg focus:shadow-primary-500/20;
-  }
-  
-  .input-glass {
-    @apply glass-input w-full px-4 py-2.5 rounded-md
-    focus:bg-white/80 focus:border-primary-400 focus:ring-2 focus:ring-primary-200
-    focus:outline-none transition-all duration-300 focus:shadow-lg;
+    focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-200;
   }
   
   /* Badge Styles */
@@ -455,36 +192,21 @@ body {
   
   /* Property Card */
   .property-card {
-    @apply bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl 
-    transition-all duration-300 border border-gray-100
-    hover:-translate-y-2 hover:scale-[1.02];
-  }
-  
-  .property-card-glass {
-    @apply glass-card rounded-xl overflow-hidden
-    transition-all duration-300 hover:shadow-2xl
-    hover:-translate-y-2 hover:scale-[1.02] hover:bg-white/85;
+    @apply bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg 
+    transition-shadow duration-300 border border-gray-100;
   }
   
   /* Stats */
   .stat-box {
-    @apply text-center p-6 transition-all duration-300
-    hover:scale-105 hover:shadow-lg;
-  }
-  
-  .stat-box-glass {
-    @apply glass-card text-center p-6 rounded-xl
-    transition-all duration-300 hover:scale-105 hover:shadow-xl
-    hover:-translate-y-1 hover:bg-white/80;
+    @apply text-center p-6;
   }
   
   .stat-value {
-    @apply text-3xl md:text-4xl font-bold text-gray-900 mb-1
-    transition-all duration-300;
+    @apply text-3xl md:text-4xl font-bold text-gray-900 mb-1;
   }
   
   .stat-label {
-    @apply text-sm text-gray-600 transition-colors duration-300;
+    @apply text-sm text-gray-600;
   }
 }
 
@@ -496,60 +218,20 @@ body {
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 4px;
-  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
 
-/* Enhanced Focus States */
-*:focus-visible {
-  outline: 2px solid rgba(239, 68, 68, 0.5);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
 
-/* Loading Skeleton */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
 
-/* Ripple Effect */
-.ripple {
-  position: relative;
-  overflow: hidden;
-}
 
-.ripple::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
 
-.ripple:active::after {
-  width: 300px;
-  height: 300px;
-}
 
 

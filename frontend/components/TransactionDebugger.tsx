@@ -46,8 +46,8 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
 
   if (!address) {
     return (
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-yellow-800 dark:text-yellow-200">⚠️ Wallet not connected</p>
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+        <p className="text-yellow-800 font-semibold">⚠️ Wallet not connected</p>
       </div>
     )
   }
@@ -58,18 +58,23 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
   const isCorrectNetwork = chain?.id === 421614 // Arbitrum Sepolia
 
   return (
-    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">🔍 Transaction Checklist</h3>
+    <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-2 border-blue-200 rounded-2xl shadow-card p-6 space-y-3">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+          <span className="text-xl">🔍</span>
+        </div>
+        <h3 className="font-bold text-blue-900 text-lg">Transaction Checklist</h3>
+      </div>
       
       {/* Network Check */}
-      <div className="flex items-center gap-2">
-        <span className={isCorrectNetwork ? '✅' : '❌'}>
+      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+        <span className="text-xl">
           {isCorrectNetwork ? '✅' : '❌'}
         </span>
-        <span className="text-sm">
-          Network: {chain?.name || 'Unknown'} 
+        <span className="text-sm font-semibold">
+          Network: <span className="text-gray-900">{chain?.name || 'Unknown'}</span>
           {!isCorrectNetwork && (
-            <span className="text-red-600 dark:text-red-400 ml-2">
+            <span className="text-red-600 ml-2">
               (Switch to Arbitrum Sepolia!)
             </span>
           )}
@@ -77,14 +82,14 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
       </div>
 
       {/* ETH Balance */}
-      <div className="flex items-center gap-2">
-        <span className={hasEnoughETH ? '✅' : '❌'}>
+      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+        <span className="text-xl">
           {hasEnoughETH ? '✅' : '❌'}
         </span>
-        <span className="text-sm">
-          ETH Balance: {ethBalance ? formatUnits(ethBalance.value, 18) : '0'} ETH
+        <span className="text-sm font-semibold">
+          ETH Balance: <span className="text-gray-900">{ethBalance ? formatUnits(ethBalance.value, 18).slice(0, 8) : '0'} ETH</span>
           {!hasEnoughETH && (
-            <span className="text-red-600 dark:text-red-400 ml-2">
+            <span className="text-red-600 ml-2">
               (Get testnet ETH from faucet!)
             </span>
           )}
@@ -92,14 +97,14 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
       </div>
 
       {/* USDC Balance */}
-      <div className="flex items-center gap-2">
-        <span className={hasUSDC ? '✅' : '❌'}>
+      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+        <span className="text-xl">
           {hasUSDC ? '✅' : '❌'}
         </span>
-        <span className="text-sm">
-          USDC Balance: {usdcBalance ? formatUnits(usdcBalance, 6) : '0'} USDC
+        <span className="text-sm font-semibold">
+          USDC Balance: <span className="text-gray-900">{usdcBalance ? formatUnits(usdcBalance, 6) : '0'} USDC</span>
           {!hasUSDC && (
-            <span className="text-red-600 dark:text-red-400 ml-2">
+            <span className="text-red-600 ml-2">
               (Need USDC tokens!)
             </span>
           )}
@@ -107,14 +112,14 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
       </div>
 
       {/* USDC Allowance */}
-      <div className="flex items-center gap-2">
-        <span className={hasAllowance ? '✅' : '⚠️'}>
+      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+        <span className="text-xl">
           {hasAllowance ? '✅' : '⚠️'}
         </span>
-        <span className="text-sm">
-          USDC Approved: {usdcAllowance ? formatUnits(usdcAllowance, 6) : '0'} USDC
+        <span className="text-sm font-semibold">
+          USDC Approved: <span className="text-gray-900">{usdcAllowance ? formatUnits(usdcAllowance, 6) : '0'} USDC</span>
           {!hasAllowance && (
-            <span className="text-yellow-600 dark:text-yellow-400 ml-2">
+            <span className="text-yellow-600 ml-2">
               (Approve USDC first!)
             </span>
           )}
@@ -123,14 +128,14 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
 
       {/* Ward Boy Check */}
       {showWardBoyCheck && propertyId && (
-        <div className="flex items-center gap-2">
-          <span className={isWardBoy ? '✅' : '❌'}>
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+          <span className="text-xl">
             {isWardBoy ? '✅' : '❌'}
           </span>
-          <span className="text-sm">
-            Ward Boy Status: {isWardBoy ? 'Assigned' : 'Not Assigned'}
+          <span className="text-sm font-semibold">
+            Ward Boy Status: <span className="text-gray-900">{isWardBoy ? 'Assigned' : 'Not Assigned'}</span>
             {!isWardBoy && (
-              <span className="text-red-600 dark:text-red-400 ml-2">
+              <span className="text-red-600 ml-2">
                 (Admin needs to assign you!)
               </span>
             )}
@@ -139,14 +144,23 @@ export function TransactionDebugger({ propertyId, showWardBoyCheck }: Transactio
       )}
 
       {/* Contract Addresses */}
-      <details className="mt-3">
-        <summary className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
-          Show Contract Addresses
+      <details className="mt-4">
+        <summary className="text-xs text-gray-600 cursor-pointer font-semibold hover:text-gray-900 transition-colors">
+          Show Contract Addresses ▼
         </summary>
-        <div className="mt-2 text-xs space-y-1 font-mono">
-          <div>USDC: {CONTRACTS.USDC}</div>
-          <div>RevenueSplitter: {CONTRACTS.RevenueSplitter}</div>
-          <div>Your Address: {address}</div>
+        <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2 font-mono">
+          <div className="flex justify-between">
+            <span className="text-gray-600">USDC:</span>
+            <span className="text-gray-900">{CONTRACTS.USDC}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">RevenueSplitter:</span>
+            <span className="text-gray-900">{CONTRACTS.RevenueSplitter}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Your Address:</span>
+            <span className="text-gray-900">{address}</span>
+          </div>
         </div>
       </details>
     </div>

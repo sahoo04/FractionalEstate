@@ -26,13 +26,13 @@ export async function POST(request: Request) {
       )
     }
 
-    logger.info('Updating listing status to CANCELLED', { listingId })
+    logger.info('Updating listing status to DELISTED', { listingId })
 
-    // Update listing status to CANCELLED
+    // Update listing status to DELISTED (cancelled listings)
     const { data, error } = await (supabaseAdmin as any)
       .from('marketplace_listings')
       .update({
-        status: 'CANCELLED',
+        status: 'DELISTED',
         updated_at: new Date().toISOString()
       })
       .eq('listing_id', listingId)

@@ -7,6 +7,11 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network arbitrumSepolia",
+    "deploy:property-only": "hardhat run scripts/deploy-property-only.ts --network arbitrumSepolia",
+    "deploy:marketplace-only": "hardhat run scripts/deploy-marketplace-only.ts --network arbitrumSepolia",
+    "cancel:old-listings": "hardhat run scripts/cancel-old-listings.ts --network arbitrumSepolia",
+    "check:old-listings": "hardhat run scripts/check-old-listings.ts --network arbitrumSepolia",
+    "mint-usdc": "hardhat run scripts/mint-usdc.ts --network arbitrumSepolia",
     "setup": "hardhat run scripts/setup.ts --network arbitrumSepolia"
   },
   "keywords": [],
